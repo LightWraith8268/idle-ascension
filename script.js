@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // -----------------
     let gameState = {
         userId: null,
+        ascensionPoints: 0,
         skills: {
             woodcutting: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Logs', gatherRate: 1, baseXp: 10 },
             mining: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Ore', gatherRate: 0, baseXp: 15 },
@@ -141,6 +142,50 @@ document.addEventListener('DOMContentLoaded', () => {
             saveTicker = 0;
             saveGameState();
         }
+
+        updateAscendButton();
+    }
+
+    function calculateAscensionPoints() {
+        // For now, 1 AP for every 10 total levels.
+        const totalLevels = Object.values(gameState.skills).reduce((sum, skill) => sum + skill.level, 0);
+        return Math.floor(totalLevels / 10);
+    }
+
+    function ascend() {
+        const pointsGained = calculateAscensionPoints();
+        if (pointsGained <= 0) {
+            addLog("You need to make more progress before ascending.");
+            return;
+        }
+
+        addLog(`You have ascended and gained ${pointsGained} Ascension Points!`)
+
+        gameState.ascensionPoints += pointsGained;
+
+        // Reset skills and inventory
+        gameState.skills = {
+            woodcutting: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Logs', gatherRate: 1, baseXp: 10 },
+            mining: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Ore', gatherRate: 0, baseXp: 15 },
+            fishing: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Fish', gatherRate: 0, baseXp: 12 }
+        };
+        gameState.inventory = { Logs: 0, Ore: 0, Fish: 0 };
+        gameState.activeSkill = 'woodcutting';
+
+        saveGameState();
+        updateAllUI();
+    }
+
+    function updateAscendButton() {
+        const ascendBtn = document.getElementById('ascend-btn');
+        const pointsGained = calculateAscensionPoints();
+        if (pointsGained > 0) {
+            ascendBtn.disabled = false;
+            ascendBtn.textContent = `Ascend for ${pointsGained} AP`;
+        } else {
+            ascendBtn.disabled = true;
+            ascendBtn.textContent = 'Ascend';
+        }
     }
 
     function levelUp(skillName) {
@@ -165,7 +210,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateAllUI() {
         updateSkillsList();
         updateInventory();
+        updateStats();
         setActiveSkill(gameState.activeSkill);
+    }
+
+    function updateStats() {
+        document.getElementById('ascension-points-display').textContent = gameState.ascensionPoints;
     }
 
     async function displayVersion() {
@@ -240,6 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('signup-btn').addEventListener('click', signUpWithEmail);
         document.getElementById('google-signin-btn').addEventListener('click', signInWithGoogle);
         document.getElementById('signout-btn').addEventListener('click', signOut);
+        document.getElementById('ascend-btn').addEventListener('click', ascend);
 
         displayVersion();
 
