@@ -441,11 +441,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const inventoryContent = document.getElementById('inventory-content');
         inventoryContent.innerHTML = '';
         for (const item in gameState.inventory) {
-            const amount = gameState.inventory[item];
+            let amount = gameState.inventory[item];
             if (amount > 0) {
+                let roundedAmount = Math.round(amount);
+                if (roundedAmount % 2 !== 0) {
+                    // If odd, make it even. Prioritize rounding up if .5, otherwise round down.
+                    if (amount > roundedAmount) {
+                        roundedAmount++;
+                    } else {
+                        roundedAmount--;
+                    }
+                }
+                if (roundedAmount < 0) roundedAmount = 0; // Ensure amount doesn't go negative
+
                 const entry = document.createElement('div');
                 entry.className = 'inventory-entry';
-                entry.innerHTML = `<span>${item}:</span><span>${amount}</span>`;
+                entry.innerHTML = `<span>${item}:</span><span>${roundedAmount}</span>`;
                 inventoryContent.appendChild(entry);
             }
         }
