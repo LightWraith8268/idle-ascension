@@ -3,26 +3,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // -----------------
     // --- 1. STATE VARIABLES ---
     // -----------------
-    let gameState = {
+    let userProfile = {
         userId: null,
-        ascensionPoints: 0,
-        lastSaveTimestamp: null,
-        skillTree: {
-            nodes: {
-                root: { purchased: true, cost: 0, description: 'The journey begins.' },
-                xp_boost_1: { purchased: false, cost: 1, requires: 'root', description: '+10% XP from all sources.' },
-                resource_boost_1: { purchased: false, cost: 1, requires: 'root', description: '+10% resources from all sources.' },
-                xp_boost_2: { purchased: false, cost: 3, requires: 'xp_boost_1', description: 'A further +15% XP from all sources.' }
-            }
-        },
-        skills: {
-            woodcutting: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Logs', gatherRate: 1, baseXp: 10 },
-            mining: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Ore', gatherRate: 0, baseXp: 15 },
-            fishing: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Fish', gatherRate: 0, baseXp: 12 }
-        },
-        inventory: { Logs: 0, Ore: 0, Fish: 0 },
-        activeSkill: 'woodcutting'
+        currentSlot: 0,
+        slots: []
     };
+    let gameState = {}; // This will now hold the state of the current slot
     let saveInterval = 15;
     let saveTicker = 0;
     let gameLoopInterval = null;
@@ -87,11 +73,35 @@ document.addEventListener('DOMContentLoaded', () => {
         authError.classList.remove('d-none');
     }
 
+    function getNewGameState() {
+        return {
+            ascensionPoints: 0,
+            lastSaveTimestamp: null,
+            skillTree: {
+                nodes: {
+                    root: { purchased: true, cost: 0, description: 'The journey begins.' },
+                    xp_boost_1: { purchased: false, cost: 1, requires: 'root', description: '+10% XP from all sources.' },
+                    resource_boost_1: { purchased: false, cost: 1, requires: 'root', description: '+10% resources from all sources.' },
+                    xp_boost_2: { purchased: false, cost: 3, requires: 'xp_boost_1', description: 'A further +15% XP from all sources.' }
+                }
+            },
+            skills: {
+                woodcutting: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Logs', gatherRate: 1, baseXp: 10 },
+                mining: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Ore', gatherRate: 0, baseXp: 15 },
+                fishing: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Fish', gatherRate: 0, baseXp: 12 }
+            },
+            inventory: { Logs: 0, Ore: 0, Fish: 0 },
+            activeSkill: 'woodcutting'
+        };
+    }
+
     async function saveGameState() {
-        if (!gameState.userId) return;
+        if (!userProfile.userId) return;
+        // Update the current slot in the profile before saving
+        userProfile.slots[userProfile.currentSlot] = gameState;
         gameState.lastSaveTimestamp = Date.now();
         try {
-            await db.collection('users').doc(gameState.userId).set(gameState);
+            await db.collection('users').doc(userProfile.userId).set(userProfile);
         } catch (error) {
             console.error("Error saving game state: ", error);
         }
@@ -101,14 +111,22 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const doc = await db.collection('users').doc(userId).get();
             if (doc.exists) {
-                Object.assign(gameState, doc.data());
+                userProfile = doc.data();
+                if (userProfile.slots.length === 0) {
+                    userProfile.slots.push(getNewGameState());
+                }
+                gameState = userProfile.slots[userProfile.currentSlot];
+
                 if (gameState.lastSaveTimestamp) {
                     const offlineTime = Date.now() - gameState.lastSaveTimestamp;
                     calculateOfflineProgress(offlineTime / 1000); // pass seconds
                 }
-                addLog('Save data loaded from cloud.');
+                addLog(`Save data loaded for slot ${userProfile.currentSlot + 1}.`);
             } else {
                 addLog('No save data found. Creating a new game.');
+                userProfile.userId = userId;
+                userProfile.slots.push(getNewGameState());
+                gameState = userProfile.slots[0];
                 await saveGameState();
             }
         } catch (error) {
@@ -139,10 +157,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function startGame(user) {
         const userEmail = document.getElementById('user-email');
-        const userInfo = document.getElementById('user-info');
-        gameState.userId = user.uid;
+        userProfile.userId = user.uid;
         if(user.email) userEmail.textContent = user.email;
-        userInfo.classList.remove('d-none');
         await loadGameState(user.uid);
         updateAllUI();
         if (gameLoopInterval) clearInterval(gameLoopInterval);
@@ -152,11 +168,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function resetGame() {
-        const userInfo = document.getElementById('user-info');
         const userEmail = document.getElementById('user-email');
         if (gameLoopInterval) clearInterval(gameLoopInterval);
         gameLoopInterval = null;
-        if(userInfo) userInfo.classList.add('d-none');
         if(userEmail) userEmail.textContent = '';
         document.getElementById('skills-list').innerHTML = '';
         document.getElementById('action-content').innerHTML = '<p>Select a skill from the left to begin.</p>';
@@ -201,16 +215,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         addLog(`You have ascended and gained ${pointsGained} Ascension Points!`)
 
-        gameState.ascensionPoints += pointsGained;
-
-        // Reset skills and inventory
-        gameState.skills = {
-            woodcutting: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Logs', gatherRate: 1, baseXp: 10 },
-            mining: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Ore', gatherRate: 0, baseXp: 15 },
-            fishing: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Fish', gatherRate: 0, baseXp: 12 }
-        };
-        gameState.inventory = { Logs: 0, Ore: 0, Fish: 0 };
-        gameState.activeSkill = 'woodcutting';
+        const currentAscensionPoints = gameState.ascensionPoints;
+        gameState = getNewGameState(); // Reset the slot
+        gameState.ascensionPoints = currentAscensionPoints + pointsGained;
 
         saveGameState();
         updateAllUI();
@@ -262,6 +269,56 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStats();
         setActiveSkill(gameState.activeSkill);
         updateSkillTreeUI();
+        updateSlotSwitcherUI();
+    }
+
+    function switchSlot(slotIndex) {
+        if (slotIndex >= 3) {
+            addLog("You can have a maximum of 3 save slots.");
+            return;
+        }
+
+        if (slotIndex === userProfile.currentSlot) return;
+
+        if (slotIndex >= userProfile.slots.length) {
+            userProfile.slots.push(getNewGameState());
+        }
+
+        userProfile.currentSlot = slotIndex;
+        saveGameState();
+        location.reload();
+    }
+
+    function updateSlotSwitcherUI() {
+        const slotList = document.getElementById('slot-list');
+        const slotSwitcherBtn = document.getElementById('slot-switcher-btn');
+        slotList.innerHTML = '';
+
+        slotSwitcherBtn.textContent = `Save Slot ${userProfile.currentSlot + 1}`;
+
+        for (let i = 0; i < 3; i++) {
+            const slotItem = document.createElement('li');
+            const slotLink = document.createElement('a');
+            slotLink.className = 'dropdown-item';
+            slotLink.href = '#';
+
+            if (i < userProfile.slots.length) {
+                slotLink.textContent = `Slot ${i + 1}`;
+                if (i === userProfile.currentSlot) {
+                    slotLink.classList.add('active');
+                }
+            } else {
+                if (userProfile.slots.length < 3) {
+                    slotLink.textContent = 'New Slot';
+                } else {
+                    continue; // Don't show 'New Slot' if we are at the limit
+                }
+            }
+
+            slotLink.onclick = () => switchSlot(i);
+            slotItem.appendChild(slotLink);
+            slotList.appendChild(slotItem);
+        }
     }
 
     function purchaseSkillTreeNode(nodeId) {

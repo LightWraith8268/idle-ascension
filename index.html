@@ -10,9 +10,45 @@
 <body>
 
     <div class="container-fluid mt-4">
-        <div id="user-info" class="text-end d-none">
-            <span id="user-email" class="text-muted me-3"></span>
-            <button id="signout-btn" class="btn btn-sm btn-outline-secondary">Sign Out</button>
+        <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#main-menu" aria-controls="main-menu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="offcanvas offcanvas-start text-white" tabindex="-1" id="main-menu" aria-labelledby="main-menu-label" style="background-color: #2a2a2a;">
+            <div class="offcanvas-header border-bottom border-secondary">
+                <h5 class="offcanvas-title" id="main-menu-label">Menu</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body">
+                <!-- Player Profile -->
+                <div id="user-info" class="mb-4">
+                    <h5>Player Profile</h5>
+                    <div id="user-email" class="text-muted"></div>
+                    <div class="dropdown mt-2">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="slot-switcher-btn" data-bs-toggle="dropdown">
+                            Save Slot
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-dark" id="slot-list">
+                            <!-- Slot items will be added here -->
+                        </ul>
+                    </div>
+                    <button id="signout-btn" class="btn btn-sm btn-outline-danger mt-2">Sign Out</button>
+                </div>
+
+                <!-- Prestige -->
+                <div id="prestige-section" class="mb-4">
+                    <h5>Prestige</h5>
+                    <div id="skill-tree-content">
+                        <!-- Skill tree will be dynamically added here -->
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div id="settings-section">
+                    <h5>Settings</h5>
+                    <p class="text-muted">No settings available yet.</p>
+                </div>
+            </div>
         </div>
 
         <h1 class="text-center mb-4">Idle Ascension</h1>
@@ -36,33 +72,12 @@
 
             <!-- Center Panel: Action Area -->
             <div class="col-md-6">
-                <ul class="nav nav-tabs" id="center-panel-tabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="action-tab" data-bs-toggle="tab" data-bs-target="#action-panel-tab" type="button" role="tab">Action</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="prestige-tab" data-bs-toggle="tab" data-bs-target="#prestige-panel-tab" type="button" role="tab">Prestige</button>
-                    </li>
-                </ul>
-                <div class="tab-content">
-                    <div class="tab-pane fade show active" id="action-panel-tab" role="tabpanel">
-                        <div class="game-panel" id="action-panel">
-                            <h4 class="panel-title" id="action-panel-title">Welcome</h4>
-                            <div id="action-content">
-                                <p>Select a skill from the left to begin.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="tab-pane fade" id="prestige-panel-tab" role="tabpanel">
-                        <div class="game-panel" id="prestige-panel">
-                            <h4 class="panel-title">Prestige Upgrades</h4>
-                            <div id="skill-tree-content">
-                                <!-- Skill tree will be dynamically added here -->
-                            </div>
-                        </div>
+                <div class="game-panel" id="action-panel">
+                    <h4 class="panel-title" id="action-panel-title">Welcome</h4>
+                    <div id="action-content">
+                        <p>Select a skill from the left to begin.</p>
                     </div>
                 </div>
-
                 <div class="game-panel mt-3" id="log-panel">
                     <h4 class="panel-title">Game Log</h4>
                     <div id="log-messages">
