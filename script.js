@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const actionContent = document.getElementById('action-content');
     const logMessages = document.getElementById('log-messages');
     const inventoryContent = document.getElementById('inventory-content');
+    const versionDisplay = document.getElementById('version-display');
 
     // --- FIREBASE FUNCTIONS --- //
     async function saveGameState() {
@@ -119,6 +120,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- UI UPDATE FUNCTIONS --- //
+    async function displayVersion() {
+        try {
+            const response = await fetch('package.json');
+            const data = await response.json();
+            versionDisplay.textContent = `v${data.version}`;
+        } catch (error) {
+            console.error('Error fetching version:', error);
+            versionDisplay.textContent = 'v?.?.?';
+        }
+    }
+
     function addLog(message) {
         const logEntry = document.createElement('p');
         logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
@@ -176,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INITIALIZATION --- //
     async function init() {
+        displayVersion();
         addLog('Connecting to server...');
         try {
             const userCredential = await auth.signInAnonymously();
