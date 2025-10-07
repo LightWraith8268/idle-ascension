@@ -36,12 +36,33 @@
 
             <!-- Center Panel: Action Area -->
             <div class="col-md-6">
-                <div class="game-panel" id="action-panel">
-                    <h4 class="panel-title" id="action-panel-title">Welcome</h4>
-                    <div id="action-content">
-                        <p>Select a skill from the left to begin.</p>
+                <ul class="nav nav-tabs" id="center-panel-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="action-tab" data-bs-toggle="tab" data-bs-target="#action-panel-tab" type="button" role="tab">Action</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="prestige-tab" data-bs-toggle="tab" data-bs-target="#prestige-panel-tab" type="button" role="tab">Prestige</button>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="action-panel-tab" role="tabpanel">
+                        <div class="game-panel" id="action-panel">
+                            <h4 class="panel-title" id="action-panel-title">Welcome</h4>
+                            <div id="action-content">
+                                <p>Select a skill from the left to begin.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="prestige-panel-tab" role="tabpanel">
+                        <div class="game-panel" id="prestige-panel">
+                            <h4 class="panel-title">Prestige Upgrades</h4>
+                            <div id="skill-tree-content">
+                                <!-- Skill tree will be dynamically added here -->
+                            </div>
+                        </div>
                     </div>
                 </div>
+
                 <div class="game-panel mt-3" id="log-panel">
                     <h4 class="panel-title">Game Log</h4>
                     <div id="log-messages">

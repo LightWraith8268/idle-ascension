@@ -6,6 +6,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let gameState = {
         userId: null,
         ascensionPoints: 0,
+        lastSaveTimestamp: null,
+        skillTree: {
+            nodes: {
+                root: { purchased: true, cost: 0, description: 'The journey begins.' },
+                xp_boost_1: { purchased: false, cost: 1, requires: 'root', description: '+10% XP from all sources.' },
+                resource_boost_1: { purchased: false, cost: 1, requires: 'root', description: '+10% resources from all sources.' },
+                xp_boost_2: { purchased: false, cost: 3, requires: 'xp_boost_1', description: 'A further +15% XP from all sources.' }
+            }
+        },
         skills: {
             woodcutting: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Logs', gatherRate: 1, baseXp: 10 },
             mining: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Ore', gatherRate: 0, baseXp: 15 },
@@ -80,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function saveGameState() {
         if (!gameState.userId) return;
+        gameState.lastSaveTimestamp = Date.now();
         try {
             await db.collection('users').doc(gameState.userId).set(gameState);
         } catch (error) {
@@ -92,6 +102,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const doc = await db.collection('users').doc(userId).get();
             if (doc.exists) {
                 Object.assign(gameState, doc.data());
+                if (gameState.lastSaveTimestamp) {
+                    const offlineTime = Date.now() - gameState.lastSaveTimestamp;
+                    calculateOfflineProgress(offlineTime / 1000); // pass seconds
+                }
                 addLog('Save data loaded from cloud.');
             } else {
                 addLog('No save data found. Creating a new game.');
@@ -101,6 +115,26 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Error loading game state: ", error);
             addLog('Error loading game. Check console.');
         }
+    }
+
+    function calculateOfflineProgress(offlineSeconds) {
+        const maxOfflineTime = 2 * 60 * 60; // 2 hours in seconds
+        const offlineTime = Math.min(offlineSeconds, maxOfflineTime);
+
+        if (offlineTime <= 0) return;
+
+        const skill = gameState.skills[gameState.activeSkill];
+        if (!skill || skill.gatherRate <= 0) return;
+
+        let resourcesGained = skill.gatherRate * offlineTime;
+        if (gameState.skillTree.nodes.resource_boost_1.purchased) {
+            resourcesGained *= 1.10;
+        }
+
+        gameState.inventory[skill.resource] += resourcesGained;
+        gainXp(gameState.activeSkill, resourcesGained);
+
+        addLog(`Welcome back! You were offline for ${Math.floor(offlineTime / 60)} minutes and earned ${Math.floor(resourcesGained)} ${skill.resource}.`);
     }
 
     async function startGame(user) {
@@ -132,7 +166,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function gameTick() {
         const skill = gameState.skills[gameState.activeSkill];
         if (skill && skill.gatherRate > 0) {
-            const resourcesGained = skill.gatherRate;
+            let resourcesGained = skill.gatherRate;
+
+            // Apply skill tree bonuses
+            if (gameState.skillTree.nodes.resource_boost_1.purchased) {
+                resourcesGained *= 1.10;
+            }
+
             gameState.inventory[skill.resource] += resourcesGained;
             gainXp(gameState.activeSkill, resourcesGained);
             updateInventory();
@@ -199,7 +239,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function gainXp(skillName, amount) {
         const skill = gameState.skills[skillName];
-        const xpGained = skill.baseXp * amount;
+        let xpGained = skill.baseXp * amount;
+
+        // Apply skill tree bonuses
+        if (gameState.skillTree.nodes.xp_boost_1.purchased) {
+            xpGained *= 1.10;
+        }
+        if (gameState.skillTree.nodes.xp_boost_2.purchased) {
+            xpGained *= 1.15;
+        }
+
         skill.xp += xpGained;
         while (skill.xp >= skill.xpToNextLevel) {
             levelUp(skillName);
@@ -212,6 +261,60 @@ document.addEventListener('DOMContentLoaded', () => {
         updateInventory();
         updateStats();
         setActiveSkill(gameState.activeSkill);
+        updateSkillTreeUI();
+    }
+
+    function purchaseSkillTreeNode(nodeId) {
+        const node = gameState.skillTree.nodes[nodeId];
+        const requiredNode = gameState.skillTree.nodes[node.requires];
+
+        if (node.purchased) {
+            addLog("You have already purchased this upgrade.");
+            return;
+        }
+
+        if (gameState.ascensionPoints < node.cost) {
+            addLog("You do not have enough Ascension Points.");
+            return;
+        }
+
+        if (requiredNode && !requiredNode.purchased) {
+            addLog("You must purchase the prerequisite upgrade first.");
+            return;
+        }
+
+        gameState.ascensionPoints -= node.cost;
+        node.purchased = true;
+        addLog(`Purchased upgrade: ${node.description}`);
+        updateAllUI();
+        saveGameState();
+    }
+
+    function updateSkillTreeUI() {
+        const skillTreeContent = document.getElementById('skill-tree-content');
+        skillTreeContent.innerHTML = '';
+
+        for (const nodeId in gameState.skillTree.nodes) {
+            const node = gameState.skillTree.nodes[nodeId];
+            const requiredNode = gameState.skillTree.nodes[node.requires];
+
+            const button = document.createElement('button');
+            button.className = 'btn m-2';
+            button.innerHTML = `${node.description}<br><small>Cost: ${node.cost} AP</small>`;
+            button.onclick = () => purchaseSkillTreeNode(nodeId);
+
+            if (node.purchased) {
+                button.classList.add('btn-success');
+                button.disabled = true;
+            } else if ((requiredNode && requiredNode.purchased) && gameState.ascensionPoints >= node.cost) {
+                button.classList.add('btn-primary');
+            } else {
+                button.classList.add('btn-secondary');
+                button.disabled = true;
+            }
+
+            skillTreeContent.appendChild(button);
+        }
     }
 
     function updateStats() {
