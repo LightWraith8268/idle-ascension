@@ -116,10 +116,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Migration for old save format
                 if (!loadedData.slots) {
                     addLog('Old save format detected. Migrating to new format...');
+                    const baseGameState = getNewGameState();
+                    const mergedGameState = { ...baseGameState, ...loadedData };
                     const newProfile = {
                         userId: userId,
                         currentSlot: 0,
-                        slots: [loadedData] // The old data is the first slot
+                        slots: [mergedGameState]
                     };
                     await db.collection('users').doc(userId).set(newProfile);
                     location.reload(); // Reload the page to apply the new structure
@@ -127,6 +129,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 userProfile = loadedData;
+
+                // Ensure all slots have the latest schema
+                userProfile.slots = userProfile.slots.map(slot => {
+                    const baseGameState = getNewGameState();
+                    return { ...baseGameState, ...slot };
+                });
 
                 if (userProfile.slots.length === 0) {
                     userProfile.slots.push(getNewGameState());
@@ -364,6 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateSkillTreeUI() {
+        console.log('In updateSkillTreeUI - gameState:', gameState);
         const skillTreeContent = document.getElementById('skill-tree-content');
         skillTreeContent.innerHTML = '';
 
@@ -443,6 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setActiveSkill(skillName) {
+        console.log('In setActiveSkill - gameState:', gameState);
         const actionPanelTitle = document.getElementById('action-panel-title');
         const actionContent = document.getElementById('action-content');
         gameState.activeSkill = skillName;
