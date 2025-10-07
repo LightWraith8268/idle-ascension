@@ -28,6 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const logEntry = document.createElement('p');
         logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
         logMessages.prepend(logEntry);
+        // Increased log length as requested
+        if (logMessages.children.length > 100) {
+            logMessages.removeChild(logMessages.lastChild);
+        }
     }
 
     async function signInWithGoogle() {
@@ -102,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const userEmail = document.getElementById('user-email');
         const userInfo = document.getElementById('user-info');
         gameState.userId = user.uid;
-        userEmail.textContent = user.email;
+        if(user.email) userEmail.textContent = user.email;
         userInfo.classList.remove('d-none');
         await loadGameState(user.uid);
         updateAllUI();
@@ -174,9 +178,55 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function updateSkillsList() { /* ... same as before ... */ }
-    function updateInventory() { /* ... same as before ... */ }
-    function setActiveSkill(skillName) { /* ... same as before ... */ }
+    function updateSkillsList() {
+        const skillsList = document.getElementById('skills-list');
+        skillsList.innerHTML = '';
+        for (const skillName in gameState.skills) {
+            const skill = gameState.skills[skillName];
+            const xpPercent = (skill.xp / skill.xpToNextLevel) * 100;
+            const skillButton = document.createElement('div');
+            skillButton.className = 'skill-button';
+            skillButton.onclick = () => setActiveSkill(skillName);
+            skillButton.innerHTML = `
+                <div class="d-flex justify-content-between">
+                    <span>${skillName.charAt(0).toUpperCase() + skillName.slice(1)}</span>
+                    <span>Lvl ${skill.level}</span>
+                </div>
+                <div class="progress" style="height: 20px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: ${xpPercent}%;" aria-valuenow="${xpPercent}" aria-valuemin="0" aria-valuemax="100">
+                        ${Math.floor(skill.xp)} / ${skill.xpToNextLevel}
+                    </div>
+                </div>
+            `;
+            skillsList.appendChild(skillButton);
+        }
+    }
+
+    function updateInventory() {
+        const inventoryContent = document.getElementById('inventory-content');
+        inventoryContent.innerHTML = '';
+        for (const item in gameState.inventory) {
+            const amount = gameState.inventory[item];
+            if (amount > 0) {
+                const entry = document.createElement('div');
+                entry.className = 'inventory-entry';
+                entry.innerHTML = `<span>${item}:</span><span>${amount}</span>`;
+                inventoryContent.appendChild(entry);
+            }
+        }
+    }
+
+    function setActiveSkill(skillName) {
+        const actionPanelTitle = document.getElementById('action-panel-title');
+        const actionContent = document.getElementById('action-content');
+        gameState.activeSkill = skillName;
+        const skill = gameState.skills[skillName];
+        actionPanelTitle.textContent = skillName.charAt(0).toUpperCase() + skillName.slice(1);
+        actionContent.innerHTML = `
+            <p>Currently training ${skillName}.</p>
+            <p>XP/sec: ${skill.gatherRate * skill.baseXp}</p>
+        `;
+    }
 
     // -----------------
     // --- 3. INITIALIZATION ---
