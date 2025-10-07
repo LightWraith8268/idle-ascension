@@ -59,6 +59,61 @@
 
     </div>
 
+    <!-- Login Modal -->
+    <div class="modal fade" id="loginModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-white" style="background-color: #2a2a2a;">
+                <div class="modal-header border-bottom border-secondary">
+                    <h5 class="modal-title" id="loginModalLabel">Login Required</h5>
+                </div>
+                <div class="modal-body">
+                    <p>You must be signed in to play Idle Ascension.</p>
+                    <div id="auth-error" class="alert alert-danger d-none"></div>
+
+                    <ul class="nav nav-tabs nav-fill" id="authTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="signin-tab" data-bs-toggle="tab" data-bs-target="#signin-panel" type="button" role="tab">Sign In</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="signup-tab" data-bs-toggle="tab" data-bs-target="#signup-panel" type="button" role="tab">Sign Up</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content p-3">
+                        <!-- Sign In Panel -->
+                        <div class="tab-pane fade show active" id="signin-panel" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="signin-email" class="form-label">Email address</label>
+                                <input type="email" class="form-control" id="signin-email">
+                            </div>
+                            <div class="mb-3">
+                                <label for="signin-password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="signin-password">
+                            </div>
+                            <button type="button" class="btn btn-primary w-100" id="signin-btn">Sign In</button>
+                            <hr>
+                            <button type="button" class="btn btn-light w-100" id="google-signin-btn">
+                                Sign In with Google
+                            </button>
+                        </div>
+                        <!-- Sign Up Panel -->
+                        <div class="tab-pane fade" id="signup-panel" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="signup-email" class="form-label">Email address</label>
+                                <input type="email" class="form-control" id="signup-email">
+                            </div>
+                            <div class="mb-3">
+                                <label for="signup-password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="signup-password">
+                            </div>
+                            <button type="button" class="btn btn-primary w-100" id="signup-btn">Sign Up</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
