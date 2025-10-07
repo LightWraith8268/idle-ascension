@@ -116,13 +116,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Migration for old save format
                 if (!loadedData.slots) {
                     addLog('Old save format detected. Migrating to new format...');
-                    userProfile.userId = userId;
-                    userProfile.currentSlot = 0;
-                    userProfile.slots = [loadedData]; // The old data is the first slot
-                    await saveGameState();
-                } else {
-                    userProfile = loadedData;
+                    const newProfile = {
+                        userId: userId,
+                        currentSlot: 0,
+                        slots: [loadedData] // The old data is the first slot
+                    };
+                    await db.collection('users').doc(userId).set(newProfile);
+                    location.reload(); // Reload the page to apply the new structure
+                    return; // Stop execution to prevent errors
                 }
+
+                userProfile = loadedData;
 
                 if (userProfile.slots.length === 0) {
                     userProfile.slots.push(getNewGameState());
