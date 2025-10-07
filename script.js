@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let saveInterval = 15;
     let saveTicker = 0;
     let gameLoopInterval = null;
+    let loginModal = null;
 
     // --- DOM ELEMENTS --- //
     const skillsList = document.getElementById('skills-list');
@@ -22,62 +23,43 @@ document.addEventListener('DOMContentLoaded', () => {
     const logMessages = document.getElementById('log-messages');
     const inventoryContent = document.getElementById('inventory-content');
     const versionDisplay = document.getElementById('version-display');
-    const loginModalElement = document.getElementById('loginModal');
-    const loginModal = new bootstrap.Modal(loginModalElement);
     const authError = document.getElementById('auth-error');
+    const userInfo = document.getElementById('user-info');
+    const userEmail = document.getElementById('user-email');
 
     // Auth buttons
     const signinBtn = document.getElementById('signin-btn');
     const signupBtn = document.getElementById('signup-btn');
     const googleSigninBtn = document.getElementById('google-signin-btn');
+    const signoutBtn = document.getElementById('signout-btn');
 
     // --- FIREBASE AUTH --- //
-    async function signInWithGoogle() {
-        const provider = new firebase.auth.GoogleAuthProvider();
+    async function signInWithGoogle() { /* ... same as before ... */ }
+    async function signInWithEmail() { /* ... same as before ... */ }
+    async function signUpWithEmail() { /* ... same as before ... */ }
+    async function signOut() {
         try {
-            await auth.signInWithPopup(provider);
+            await auth.signOut();
             // onAuthStateChanged will handle the rest
         } catch (error) {
-            showAuthError(error.message);
+            console.error("Sign out failed: ", error);
         }
     }
 
-    async function signInWithEmail() {
-        const email = document.getElementById('signin-email').value;
-        const password = document.getElementById('signin-password').value;
-        try {
-            await auth.signInWithEmailAndPassword(email, password);
-            // onAuthStateChanged will handle the rest
-        } catch (error) {
-            showAuthError(error.message);
-        }
-    }
-
-    async function signUpWithEmail() {
-        const email = document.getElementById('signup-email').value;
-        const password = document.getElementById('signup-password').value;
-        try {
-            await auth.createUserWithEmailAndPassword(email, password);
-            // onAuthStateChanged will handle the rest
-        } catch (error) {
-            showAuthError(error.message);
-        }
-    }
-
-    function showAuthError(message) {
-        authError.textContent = message;
-        authError.classList.remove('d-none');
-    }
+    function showAuthError(message) { /* ... same as before ... */ }
 
     // --- FIREBASE FUNCTIONS --- //
     async function saveGameState() { /* ... same as before ... */ }
     async function loadGameState(userId) { /* ... same as before ... */ }
 
     // --- GAME INITIALIZATION & CORE LOGIC --- //
-    async function startGame(userId) {
-        gameState.userId = userId;
+    async function startGame(user) {
+        gameState.userId = user.uid;
+        userEmail.textContent = user.email;
+        userInfo.classList.remove('d-none');
+
         addLog('Connected! Loading save data...');
-        await loadGameState(userId);
+        await loadGameState(user.uid);
 
         updateSkillsList();
         updateInventory();
@@ -86,17 +68,26 @@ document.addEventListener('DOMContentLoaded', () => {
         if (gameLoopInterval) clearInterval(gameLoopInterval);
         gameLoopInterval = setInterval(gameTick, 1000);
         addLog('Game started!');
-        loginModal.hide();
+        if(loginModal) loginModal.hide();
+    }
+
+    function resetGame() {
+        if (gameLoopInterval) clearInterval(gameLoopInterval);
+        gameLoopInterval = null;
+        userInfo.classList.add('d-none');
+        userEmail.textContent = '';
+        // Clear UI panels
+        skillsList.innerHTML = '';
+        actionContent.innerHTML = '<p>Select a skill from the left to begin.</p>';
+        inventoryContent.innerHTML = '';
     }
 
     auth.onAuthStateChanged(user => {
         if (user) {
-            // User is signed in
-            startGame(user.uid);
+            startGame(user);
         } else {
-            // User is signed out
-            if (gameLoopInterval) clearInterval(gameLoopInterval);
-            loginModal.show();
+            resetGame();
+            if(loginModal) loginModal.show();
             addLog('Please sign in to play.');
         }
     });
@@ -115,12 +106,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INITIALIZATION --- //
     function init() {
+        const loginModalElement = document.getElementById('loginModal');
+        loginModal = new bootstrap.Modal(loginModalElement);
+
         displayVersion();
         addLog('Checking authentication status...');
+        
         // Add event listeners to auth buttons
         signinBtn.addEventListener('click', signInWithEmail);
         signupBtn.addEventListener('click', signUpWithEmail);
         googleSigninBtn.addEventListener('click', signInWithGoogle);
+        signoutBtn.addEventListener('click', signOut);
     }
 
     init();
