@@ -169,60 +169,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function calculateOfflineProgress(offlineSeconds) {
-        let maxOfflineTime = 2 * 60 * 60; // 2 hours in seconds
-        if (gameState.skillTree.nodes.offline_time_boost_1.purchased) {
-            maxOfflineTime += 1 * 60 * 60; // Add 1 hour
-        }
-        const offlineTime = Math.min(offlineSeconds, maxOfflineTime);
-
-        if (offlineTime <= 0) return;
-
-        const skill = gameState.skills[gameState.activeSkill];
-        if (!skill || skill.gatherRate <= 0) return;
-
-        let resourcesGained = skill.gatherRate;
-        if (gameState.skillTree.nodes.resource_boost_1.purchased) {
-            resourcesGained *= 1.10;
-        }
-        if (gameState.skillTree.nodes.resource_boost_2.purchased) {
-            resourcesGained *= 1.20;
-        }
-        if (gameState.activeSkill === 'woodcutting' && gameState.skillTree.nodes.woodcutting_efficiency_1.purchased) {
-            resourcesGained += 1;
-        }
-
-        resourcesGained *= offlineTime;
-
-        gameState.inventory[skill.resource] += resourcesGained;
-        gainXp(gameState.activeSkill, resourcesGained);
-
-        addLog(`Welcome back! You were offline for ${Math.floor(offlineTime / 60)} minutes and earned ${Math.floor(resourcesGained)} ${skill.resource}.`);
-    }
-
-    async function startGame(user) {
-        const userEmail = document.getElementById('user-email');
-        userProfile.userId = user.uid;
-        if(user.email) userEmail.textContent = user.email;
-        await loadGameState(user.uid);
-        updateAllUI();
-        if (gameLoopInterval) clearInterval(gameLoopInterval);
-        gameLoopInterval = setInterval(gameTick, 1000);
-        addLog('Game started!');
-        if(loginModal) loginModal.hide();
-    }
-
-    function resetGame() {
-        const userEmail = document.getElementById('user-email');
-        if (gameLoopInterval) clearInterval(gameLoopInterval);
-        gameLoopInterval = null;
-        if(userEmail) userEmail.textContent = '';
-        document.getElementById('skills-list').innerHTML = '';
-        document.getElementById('action-content').innerHTML = '<p>Select a skill from the left to begin.</p>';
-        document.getElementById('inventory-content').innerHTML = '';
-    }
-
     function gameTick() {
+        console.log('In gameTick - gameState:', gameState);
         const skill = gameState.skills[gameState.activeSkill];
         if (skill && skill.gatherRate > 0) {
             let resourcesGained = skill.gatherRate;
@@ -257,6 +205,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Apply offline time boost (this will be checked in calculateOfflineProgress)
         // No direct change needed here, but ensure calculateOfflineProgress uses it.
+    }
+
+    function calculateOfflineProgress(offlineSeconds) {
+        console.log('In calculateOfflineProgress - gameState:', gameState);
+        let maxOfflineTime = 2 * 60 * 60; // 2 hours in seconds
+        if (gameState.skillTree.nodes.offline_time_boost_1.purchased) {
+            maxOfflineTime += 1 * 60 * 60; // Add 1 hour
+        }
+        const offlineTime = Math.min(offlineSeconds, maxOfflineTime);
+
+        if (offlineTime <= 0) return;
+
+        const skill = gameState.skills[gameState.activeSkill];
+        if (!skill || skill.gatherRate <= 0) return;
+
+        let resourcesGained = skill.gatherRate;
+        if (gameState.skillTree.nodes.resource_boost_1.purchased) {
+            resourcesGained *= 1.10;
+        }
+        if (gameState.skillTree.nodes.resource_boost_2.purchased) {
+            resourcesGained *= 1.20;
+        }
+        if (gameState.activeSkill === 'woodcutting' && gameState.skillTree.nodes.woodcutting_efficiency_1.purchased) {
+            resourcesGained += 1;
+        }
+
+        resourcesGained *= offlineTime;
+
+        gameState.inventory[skill.resource] += resourcesGained;
+        gainXp(gameState.activeSkill, resourcesGained);
+
+        addLog(`Welcome back! You were offline for ${Math.floor(offlineTime / 60)} minutes and earned ${Math.floor(resourcesGained)} ${skill.resource}.`);
     }
 
     function calculateAscensionPoints() {
