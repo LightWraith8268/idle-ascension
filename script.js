@@ -112,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const doc = await db.collection('users').doc(userId).get();
             if (doc.exists) {
                 userProfile = doc.data();
+                console.log('Loaded userProfile:', userProfile);
                 if (userProfile.slots.length === 0) {
                     userProfile.slots.push(getNewGameState());
                 }
@@ -128,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 userProfile.slots.push(getNewGameState());
                 gameState = userProfile.slots[0];
                 await saveGameState();
+                console.log('Created new userProfile:', userProfile);
             }
         } catch (error) {
             console.error("Error loading game state: ", error);
@@ -290,6 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateSlotSwitcherUI() {
+        console.log('Updating slot switcher with userProfile:', userProfile);
         const slotList = document.getElementById('slot-list');
         const slotSwitcherBtn = document.getElementById('slot-switcher-btn');
         slotList.innerHTML = '';
