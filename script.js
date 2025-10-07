@@ -141,7 +141,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Ensure all slots have the latest schema
                 userProfile.slots = userProfile.slots.map(slot => {
                     const baseGameState = getNewGameState();
-                    return { ...baseGameState, ...slot };
+                    const mergedSkillTreeNodes = { ...baseGameState.skillTree.nodes, ...(slot.skillTree ? slot.skillTree.nodes : {}) };
+                    const mergedSkillTree = { ...baseGameState.skillTree, nodes: mergedSkillTreeNodes };
+                    return { ...baseGameState, ...slot, skillTree: mergedSkillTree };
                 });
 
                 if (userProfile.slots.length === 0) {
