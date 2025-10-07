@@ -19,11 +19,11 @@ body {
 }
 
 #log-panel {
-    height: 200px;
+    height: 400px;
 }
 
 #log-messages {
-    height: 150px;
+    height: 350px;
     overflow-y: auto;
     font-size: 0.9em;
     color: #ccc;
