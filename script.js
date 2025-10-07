@@ -82,13 +82,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     root: { purchased: true, cost: 0, description: 'The journey begins.' },
                     xp_boost_1: { purchased: false, cost: 1, requires: 'root', description: '+10% XP from all sources.' },
                     resource_boost_1: { purchased: false, cost: 1, requires: 'root', description: '+10% resources from all sources.' },
-                    xp_boost_2: { purchased: false, cost: 3, requires: 'xp_boost_1', description: 'A further +15% XP from all sources.' }
+                    xp_boost_2: { purchased: false, cost: 3, requires: 'xp_boost_1', description: 'A further +15% XP from all sources.' },
+                    xp_boost_3: { purchased: false, cost: 5, requires: 'xp_boost_2', description: 'Even further +20% XP from all sources.' },
+                    resource_boost_2: { purchased: false, cost: 5, requires: 'resource_boost_1', description: 'Even further +20% resources from all sources.' },
+                    offline_time_boost_1: { purchased: false, cost: 3, requires: 'root', description: 'Increase max offline time by 1 hour.' },
+                    autosave_interval_reduction_1: { purchased: false, cost: 2, requires: 'root', description: 'Reduce auto-save interval by 5 seconds.' },
+                    woodcutting_efficiency_1: { purchased: false, cost: 2, requires: 'xp_boost_1', description: '+1 gather rate for Woodcutting.' },
+                    woodcutting_xp_boost_1: { purchased: false, cost: 2, requires: 'woodcutting_efficiency_1', description: '+10% XP for Woodcutting.' },
+                    unlock_mining: { purchased: false, cost: 1, requires: 'root', description: 'Unlock the Mining skill.' },
+                    unlock_fishing: { purchased: false, cost: 1, requires: 'root', description: 'Unlock the Fishing skill.' }
                 }
             },
             skills: {
                 woodcutting: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Logs', gatherRate: 1, baseXp: 10 },
-                mining: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Ore', gatherRate: 0, baseXp: 15 },
-                fishing: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Fish', gatherRate: 0, baseXp: 12 }
+                mining: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Ore', gatherRate: 0, baseXp: 15, locked: true },
+                fishing: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Fish', gatherRate: 0, baseXp: 12, locked: true }
             },
             inventory: { Logs: 0, Ore: 0, Fish: 0 },
             activeSkill: 'woodcutting'
@@ -160,7 +168,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateOfflineProgress(offlineSeconds) {
-        const maxOfflineTime = 2 * 60 * 60; // 2 hours in seconds
+        let maxOfflineTime = 2 * 60 * 60; // 2 hours in seconds
+        if (gameState.skillTree.nodes.offline_time_boost_1.purchased) {
+            maxOfflineTime += 1 * 60 * 60; // Add 1 hour
+        }
         const offlineTime = Math.min(offlineSeconds, maxOfflineTime);
 
         if (offlineTime <= 0) return;
@@ -168,10 +179,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const skill = gameState.skills[gameState.activeSkill];
         if (!skill || skill.gatherRate <= 0) return;
 
-        let resourcesGained = skill.gatherRate * offlineTime;
+        let resourcesGained = skill.gatherRate;
         if (gameState.skillTree.nodes.resource_boost_1.purchased) {
             resourcesGained *= 1.10;
         }
+        if (gameState.skillTree.nodes.resource_boost_2.purchased) {
+            resourcesGained *= 1.20;
+        }
+        if (gameState.activeSkill === 'woodcutting' && gameState.skillTree.nodes.woodcutting_efficiency_1.purchased) {
+            resourcesGained += 1;
+        }
+
+        resourcesGained *= offlineTime;
 
         gameState.inventory[skill.resource] += resourcesGained;
         gainXp(gameState.activeSkill, resourcesGained);
@@ -210,18 +229,32 @@ document.addEventListener('DOMContentLoaded', () => {
             if (gameState.skillTree.nodes.resource_boost_1.purchased) {
                 resourcesGained *= 1.10;
             }
+            if (gameState.skillTree.nodes.resource_boost_2.purchased) {
+                resourcesGained *= 1.20;
+            }
+            if (gameState.activeSkill === 'woodcutting' && gameState.skillTree.nodes.woodcutting_efficiency_1.purchased) {
+                resourcesGained += 1;
+            }
 
             gameState.inventory[skill.resource] += resourcesGained;
             gainXp(gameState.activeSkill, resourcesGained);
             updateInventory();
         }
+
+        // Apply autosave interval reduction
+        let currentSaveInterval = 15; // default
+        if (gameState.skillTree.nodes.autosave_interval_reduction_1.purchased) {
+            currentSaveInterval -= 5;
+        }
+
         saveTicker++;
-        if (saveTicker >= saveInterval) {
+        if (saveTicker >= currentSaveInterval) {
             saveTicker = 0;
             saveGameState();
         }
 
-        updateAscendButton();
+        // Apply offline time boost (this will be checked in calculateOfflineProgress)
+        // No direct change needed here, but ensure calculateOfflineProgress uses it.
     }
 
     function calculateAscensionPoints() {
@@ -278,6 +311,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (gameState.skillTree.nodes.xp_boost_2.purchased) {
             xpGained *= 1.15;
+        }
+        if (gameState.skillTree.nodes.xp_boost_3.purchased) {
+            xpGained *= 1.20;
+        }
+        if (skillName === 'woodcutting' && gameState.skillTree.nodes.woodcutting_xp_boost_1.purchased) {
+            xpGained *= 1.10;
         }
 
         skill.xp += xpGained;
@@ -366,6 +405,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         gameState.ascensionPoints -= node.cost;
         node.purchased = true;
+
+        if (nodeId === 'unlock_mining') {
+            gameState.skills.mining.locked = false;
+            gameState.skills.mining.gatherRate = 1; // Default gather rate for mining
+            addLog('Mining skill unlocked!');
+        } else if (nodeId === 'unlock_fishing') {
+            gameState.skills.fishing.locked = false;
+            gameState.skills.fishing.gatherRate = 1; // Default gather rate for fishing
+            addLog('Fishing skill unlocked!');
+        }
+
         addLog(`Purchased upgrade: ${node.description}`);
         updateAllUI();
         saveGameState();
