@@ -184,8 +184,6 @@ document.addEventListener('DOMContentLoaded', () => {
         userProfile.userId = user.uid;
         if(user.email) userEmail.textContent = user.email;
         await loadGameState(user.uid);
-        console.log('In startGame - userProfile:', userProfile);
-        console.log('In startGame - gameState:', gameState);
         updateAllUI();
         if (gameLoopInterval) clearInterval(gameLoopInterval);
         gameLoopInterval = setInterval(gameTick, 1000);
