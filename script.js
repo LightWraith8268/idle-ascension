@@ -493,14 +493,7 @@ const purchaseSkillTreeNode = (nodeId) => {
         for (const item in gameState.inventory) {
             gameState.inventory[item].max += node.effect.amount;
         }
-    }
-        const skillToUnlock = node.effect.skill;
-        if (gameState.skills[skillToUnlock]) {
-            gameState.skills[skillToUnlock].locked = false;
-            gameState.skills[skillToUnlock].gatherRate = 1; // Default gather rate for newly unlocked skills
-            addLog(`${skillToUnlock.charAt(0).toUpperCase() + skillToUnlock.slice(1)} skill unlocked!`);
-        }
-    }
+
 
     addLog(`Purchased upgrade: ${node.description}`);
     updateAllUI();
