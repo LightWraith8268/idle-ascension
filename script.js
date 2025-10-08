@@ -622,26 +622,62 @@ const updateSkillTreeUI = () => {
         return;
     }
     dom.skillTreeContent.innerHTML = '';
+
+    const categorizedNodes = {};
     for (const nodeId in gameState.skillTree.nodes) {
         const node = gameState.skillTree.nodes[nodeId];
-        const requiredNode = gameState.skillTree.nodes[node.requires];
-
-        const button = document.createElement('button');
-        button.className = 'btn m-2';
-        button.innerHTML = `${node.description}<br><small>Cost: ${node.cost} AP</small>`;
-        button.onclick = () => purchaseSkillTreeNode(nodeId);
-
-        if (node.purchased) {
-            button.classList.add('btn-success');
-            button.disabled = true;
-        } else if ((requiredNode && requiredNode.purchased) && gameState.ascensionPoints >= node.cost) {
-            button.classList.add('btn-primary');
-        } else {
-            button.classList.add('btn-secondary');
-            button.disabled = true;
+        if (!categorizedNodes[node.type]) {
+            categorizedNodes[node.type] = [];
         }
-        dom.skillTreeContent.appendChild(button);
+        categorizedNodes[node.type].push(node);
     }
+
+    // Define display order and titles for categories
+    const categoryOrder = [
+        { type: 'xp_boost', title: 'Experience Boosts' },
+        { type: 'resource_boost', title: 'Resource Gains' },
+        { type: 'gather_rate_boost', title: 'Gather Rate Boosts' },
+        { type: 'offline_time_boost', title: 'Offline Progress' },
+        { type: 'autosave_reduction', title: 'Autosave Improvements' },
+        { type: 'skill_unlock', title: 'Skill Unlocks' },
+        { type: 'log_capacity', title: 'Log Capacity' },
+        { type: 'inventory_size', title: 'Inventory Size' },
+        { type: 'auto_ascension_unlock', title: 'Auto Ascension' },
+        { type: 'generic', title: 'General Upgrades' }
+    ];
+
+    categoryOrder.forEach(categoryInfo => {
+        const nodesInType = categorizedNodes[categoryInfo.type];
+        if (nodesInType && nodesInType.length > 0) {
+            const categoryContainer = document.createElement('div');
+            categoryContainer.className = `skill-tree-category ${categoryInfo.type}-category mb-4 p-3 border rounded`;
+            categoryContainer.innerHTML = `<h5 class="text-white border-bottom pb-2 mb-3">${categoryInfo.title}</h5>`;
+
+            // Sort nodes within category for consistent display (e.g., by cost or requires)
+            nodesInType.sort((a, b) => a.cost - b.cost);
+
+            nodesInType.forEach(node => {
+                const requiredNode = gameState.skillTree.nodes[node.requires];
+
+                const button = document.createElement('button');
+                button.className = `btn m-2 skill-node-btn ${node.type}-node`;
+                button.innerHTML = `${node.description}<br><small>Cost: ${node.cost} AP</small>`;
+                button.onclick = () => purchaseSkillTreeNode(node.id); // Use node.id here
+
+                if (node.purchased) {
+                    button.classList.add('btn-success');
+                    button.disabled = true;
+                } else if ((requiredNode && requiredNode.purchased) && gameState.ascensionPoints >= node.cost) {
+                    button.classList.add('btn-primary');
+                } else {
+                    button.classList.add('btn-secondary');
+                    button.disabled = true;
+                }
+                categoryContainer.appendChild(button);
+            });
+            dom.skillTreeContent.appendChild(categoryContainer);
+        }
+    });
 };
 
 const updateStats = () => {
