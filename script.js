@@ -44,7 +44,6 @@ let userProfile = {
     currentSlot: 0,
     slots: []
 };
-let gameState = getNewGameState();
 let saveTicker = 0;
 let gameLoopInterval = null;
 
@@ -94,8 +93,8 @@ const getNewGameState = () => ({
     activeSkill: 'woodcutting'
 });
 
-// -----------------
-// --- Authentication ---
+let gameState = getNewGameState();
+
 // -----------------
 const signInWithGoogle = async () => {
     const provider = new firebase.auth.GoogleAuthProvider();
