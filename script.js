@@ -25,7 +25,7 @@ const dom = {
     signoutBtn: null,
     ascendBtn: null,
     skillsList: null,
-    inventoryContent: null,
+    storageContent: null,
     actionPanelTitle: null,
     actionContent: null,
     ascensionPointsDisplay: null,
@@ -199,11 +199,15 @@ const getNewGameState = () => {
             nodes: nodes
         },
         skills: {
-            woodcutting: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Logs', gatherRate: 1, baseXp: 10 },
-            mining: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Ore', gatherRate: 0, baseXp: 15, locked: true },
-            fishing: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Fish', gatherRate: 0, baseXp: 12, locked: true }
+            woodcutting: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Logs', gatherRate: 1, baseXp: 10, maxStorage: 100 },
+            mining: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Ore', gatherRate: 0, baseXp: 15, locked: true, maxStorage: 100 },
+            fishing: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Fish', gatherRate: 0, baseXp: 12, locked: true, maxStorage: 100 }
         },
-        inventory: { Logs: 0, Ore: 0, Fish: 0 },
+        inventory: { 
+            Logs: { current: 0, max: 100 }, 
+            Ore: { current: 0, max: 100 }, 
+            Fish: { current: 0, max: 100 } 
+        },
         activeSkill: 'woodcutting'
     };
 };
@@ -423,8 +427,13 @@ const calculateOfflineProgress = (offlineSeconds) => {
 
     resourcesGained *= actualOfflineTime;
 
-    gameState.inventory[skill.resource] += resourcesGained;
-    gainXp(gameState.activeSkill, resourcesGained);
+    let currentAmount = gameState.inventory[skill.resource].current;
+    let maxStorage = gameState.inventory[skill.resource].max;
+    if (currentAmount < maxStorage) {
+        let resourcesToGain = Math.min(resourcesGained, maxStorage - currentAmount);
+        gameState.inventory[skill.resource].current += resourcesToGain;
+        gainXp(gameState.activeSkill, resourcesToGain);
+    }
 
     addLog(`Welcome back! You were offline for ${Math.floor(actualOfflineTime / 60)} minutes and earned ${Math.floor(resourcesGained)} ${skill.resource}.`);
 };
@@ -480,6 +489,17 @@ const purchaseSkillTreeNode = (nodeId) => {
             gameState.skills[skillToUnlock].gatherRate = 1; // Default gather rate for newly unlocked skills
             addLog(`${skillToUnlock.charAt(0).toUpperCase() + skillToUnlock.slice(1)} skill unlocked!`);
         }
+    } else if (node.type === 'inventory_size') {
+        for (const item in gameState.inventory) {
+            gameState.inventory[item].max += node.effect.amount;
+        }
+    }
+        const skillToUnlock = node.effect.skill;
+        if (gameState.skills[skillToUnlock]) {
+            gameState.skills[skillToUnlock].locked = false;
+            gameState.skills[skillToUnlock].gatherRate = 1; // Default gather rate for newly unlocked skills
+            addLog(`${skillToUnlock.charAt(0).toUpperCase() + skillToUnlock.slice(1)} skill unlocked!`);
+        }
     }
 
     addLog(`Purchased upgrade: ${node.description}`);
@@ -516,9 +536,14 @@ const gameTick = () => {
             }
         }
 
-        gameState.inventory[skill.resource] += resourcesGained;
-        gainXp(gameState.activeSkill, resourcesGained);
-        updateInventory();
+        let currentAmount = gameState.inventory[skill.resource].current;
+        let maxStorage = gameState.inventory[skill.resource].max;
+        if (currentAmount < maxStorage) {
+            let resourcesToGain = Math.min(resourcesGained, maxStorage - currentAmount);
+            gameState.inventory[skill.resource].current += resourcesToGain;
+            gainXp(gameState.activeSkill, resourcesToGain);
+        }
+        updateStorage();
     }
 
     let currentSaveInterval = SAVE_INTERVAL_SECONDS;
@@ -563,10 +588,10 @@ const updateSkillsList = () => {
     }
 };
 
-const updateInventory = () => {
-    dom.inventoryContent.innerHTML = '';
+const updateStorage = () => {
+    dom.storageContent.innerHTML = '';
     for (const item in gameState.inventory) {
-        let amount = gameState.inventory[item];
+        let amount = gameState.inventory[item].current;
         if (amount > 0) {
             let roundedAmount = Math.round(amount);
             if (roundedAmount % 2 !== 0) {
@@ -576,8 +601,8 @@ const updateInventory = () => {
 
             const entry = document.createElement('div');
             entry.className = 'inventory-entry';
-            entry.innerHTML = `<span>${item}:</span><span>${roundedAmount}</span>`;
-            dom.inventoryContent.appendChild(entry);
+            entry.innerHTML = `<span>${item}:</span><span>${roundedAmount} / ${gameState.inventory[item].max}</span>`;
+            dom.storageContent.appendChild(entry);
         }
     }
 };
@@ -737,7 +762,7 @@ const displayVersion = async () => {
 
 const updateAllUI = () => {
     updateSkillsList();
-    updateInventory();
+    updateStorage();
     updateStats();
     setActiveSkill(gameState.activeSkill);
     if (gameState.skillTree && gameState.skillTree.nodes) {
@@ -789,7 +814,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.signoutBtn = document.getElementById('signout-btn');
     dom.ascendBtn = document.getElementById('ascend-btn');
     dom.skillsList = document.getElementById('skills-list');
-    dom.inventoryContent = document.getElementById('inventory-content');
+    dom.storageContent = document.getElementById('storage-content');
     dom.actionPanelTitle = document.getElementById('action-panel-title');
     dom.actionContent = document.getElementById('action-content');
     dom.ascensionPointsDisplay = document.getElementById('ascension-points-display');
