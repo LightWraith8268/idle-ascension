@@ -125,13 +125,7 @@ const getNewGameState = () => {
 
     // Branch 3: Skill Unlocks & Initial Skill Boosts
     currentParent = root;
-    const unlockMining = createSkillUnlockNode('mining', 1, currentParent);
-    createGatherRateNode(2, unlockMining, 'mining', 0.2);
-    createXpBoostNode(2, unlockMining, 'mining', 0.05);
 
-    const unlockFishing = createSkillUnlockNode('fishing', 1, currentParent);
-    createGatherRateNode(2, unlockFishing, 'fishing', 0.2);
-    createXpBoostNode(2, unlockFishing, 'fishing', 0.05);
 
     createGatherRateNode(2, root, 'woodcutting', 0.2);
     createXpBoostNode(2, root, 'woodcutting', 0.05);
@@ -201,8 +195,8 @@ const getNewGameState = () => {
         },
         skills: {
             woodcutting: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Logs', gatherRate: 1, baseXp: 10, maxStorage: 100 },
-            mining: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Ore', gatherRate: 0, baseXp: 15, locked: true, maxStorage: 100 },
-            fishing: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Fish', gatherRate: 0, baseXp: 12, locked: true, maxStorage: 100 }
+            mining: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Ore', gatherRate: 1, baseXp: 15, locked: false, maxStorage: 100 },
+            fishing: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Fish', gatherRate: 1, baseXp: 12, locked: false, maxStorage: 100 }
         },
         inventory: { 
             Logs: { current: 0, max: 100 }, 
