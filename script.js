@@ -13,29 +13,29 @@ const ASCENSION_POINTS_PER_TEN_LEVELS = 1;
 // --- DOM Elements ---
 // -----------------
 const dom = {
-    logMessages: document.getElementById('log-messages'),
-    authError: document.getElementById('auth-error'),
-    signinEmail: document.getElementById('signin-email'),
-    signinPassword: document.getElementById('signin-password'),
-    signinBtn: document.getElementById('signin-btn'),
-    signupEmail: document.getElementById('signup-email'),
-    signupPassword: document.getElementById('signup-password'),
-    signupBtn: document.getElementById('signup-btn'),
-    googleSigninBtn: document.getElementById('google-signin-btn'),
-    signoutBtn: document.getElementById('signout-btn'),
-    ascendBtn: document.getElementById('ascend-btn'),
-    versionDisplay: document.getElementById('version-display'),
-    skillsList: document.getElementById('skills-list'),
-    inventoryContent: document.getElementById('inventory-content'),
-    actionPanelTitle: document.getElementById('action-panel-title'),
-    actionContent: document.getElementById('action-content'),
-    ascensionPointsDisplay: document.getElementById('ascension-points-display'),
-    skillTreeContent: document.getElementById('prestige-skill-tree-content'),
-    slotList: document.getElementById('slot-list'),
-    slotSwitcherBtn: document.getElementById('slot-switcher-btn'),
-    openPrestigeBtn: document.getElementById('open-prestige-btn'),
-    loginModal: null, // Initialize as null
-    prestigeModal: null // Initialize as null
+    logMessages: null,
+    authError: null,
+    signinEmail: null,
+    signinPassword: null,
+    signinBtn: null,
+    signupEmail: null,
+    signupPassword: null,
+    signupBtn: null,
+    googleSigninBtn: null,
+    signoutBtn: null,
+    ascendBtn: null,
+    versionDisplay: null,
+    skillsList: null,
+    inventoryContent: null,
+    actionPanelTitle: null,
+    actionContent: null,
+    ascensionPointsDisplay: null,
+    skillTreeContent: null,
+    slotList: null,
+    slotSwitcherBtn: null,
+    openPrestigeBtn: null,
+    loginModal: null,
+    prestigeModal: null
 };
 
 // -----------------
@@ -545,6 +545,29 @@ const resetGame = () => {
 
 document.addEventListener('DOMContentLoaded', () => {
     addLog('DOM loaded. Initializing.');
+
+    // Assign DOM elements here
+    dom.logMessages = document.getElementById('log-messages');
+    dom.authError = document.getElementById('auth-error');
+    dom.signinEmail = document.getElementById('signin-email');
+    dom.signinPassword = document.getElementById('signin-password');
+    dom.signinBtn = document.getElementById('signin-btn');
+    dom.signupEmail = document.getElementById('signup-email');
+    dom.signupPassword = document.getElementById('signup-password');
+    dom.signupBtn = document.getElementById('signup-btn');
+    dom.googleSigninBtn = document.getElementById('google-signin-btn');
+    dom.signoutBtn = document.getElementById('signout-btn');
+    dom.ascendBtn = document.getElementById('ascend-btn');
+    dom.versionDisplay = document.getElementById('version-display');
+    dom.skillsList = document.getElementById('skills-list');
+    dom.inventoryContent = document.getElementById('inventory-content');
+    dom.actionPanelTitle = document.getElementById('action-panel-title');
+    dom.actionContent = document.getElementById('action-content');
+    dom.ascensionPointsDisplay = document.getElementById('ascension-points-display');
+    dom.skillTreeContent = document.getElementById('prestige-skill-tree-content');
+    dom.slotList = document.getElementById('slot-list');
+    dom.slotSwitcherBtn = document.getElementById('slot-switcher-btn');
+    dom.openPrestigeBtn = document.getElementById('open-prestige-btn');
 
     // Initialize Bootstrap Modals here
     dom.loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
