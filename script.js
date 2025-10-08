@@ -34,6 +34,7 @@ const dom = {
     slotSwitcherBtn: null,
     openPrestigeBtn: null,
     resetGameBtn: null,
+    autosaveIntervalInput: null,
     loginModal: null,
     prestigeModal: null
 };
@@ -120,7 +121,7 @@ const getNewGameState = () => {
     // Branch 2: Utility
     currentParent = root;
     currentParent = createOfflineTimeNode(2, currentParent, 1);
-    createAutosaveNode(2, currentParent, 1);
+
     createNode(3, 'Increase log capacity by 10.', currentParent, 'log_capacity', { amount: 10 });
 
     // Branch 3: Skill Unlocks & Initial Skill Boosts
@@ -208,7 +209,8 @@ const getNewGameState = () => {
             isFishing: false,
             fishingProgress: 0,
             fishingTime: 5 // 5 seconds to catch a fish
-        }
+        },
+        autosaveInterval: 15
     };
 };
 
@@ -492,16 +494,16 @@ const purchaseSkillTreeNode = (nodeId) => {
         addLog(`Unlocked new skill: ${node.effect.skill}`);
     } else if (node.type === 'log_capacity') {
         // Log capacity is handled by MAX_LOG_MESSAGES, this node would need to modify that constant or a state variable
-    } else if (node.type === 'storage_size') {
-        for (const item in gameState.storage) {
-            gameState.storage[item].max += node.effect.amount;
+        } else if (node.type === 'storage_size') {
+            for (const item in gameState.storage) {
+                gameState.storage[item].max += node.effect.amount;
+            }
         }
-    }
-
-    addLog(`Purchased upgrade: ${node.description}`);
-    updateAllUI();
-    saveGameState();
-};
+    
+        addLog(`Purchased upgrade: ${node.description}`);
+        updateAllUI();
+        saveGameState();
+    };
 
 const calculateFishingProgress = () => {
     if (gameState.fishing.isFishing) {
@@ -542,29 +544,19 @@ const gameTick = () => {
             }
         }
 
-        let currentAmount = gameState.inventory[skill.resource].current;
-        let maxStorage = gameState.inventory[skill.resource].max;
-        if (currentAmount < maxStorage) {
-            let resourcesToGain = Math.min(resourcesGained, maxStorage - currentAmount);
-            gameState.inventory[skill.resource].current += resourcesToGain;
-            gainXp(gameState.activeSkill, resourcesToGain);
-        }
-        updateStorage();
+            let currentAmount = gameState.storage[skill.resource].current;
+            let maxStorage = gameState.storage[skill.resource].max;
+            if (currentAmount < maxStorage) {
+                let resourcesToGain = Math.min(resourcesGained, maxStorage - currentAmount);
+                gameState.storage[skill.resource].current += resourcesToGain;
+                gainXp(gameState.activeSkill, resourcesToGain);
+            }        updateStorage();
     }
 
     calculateFishingProgress();
 
-    let currentSaveInterval = SAVE_INTERVAL_SECONDS;
-    for (const nodeId in gameState.skillTree.nodes) {
-        const node = gameState.skillTree.nodes[nodeId];
-        if (node.purchased && node.type === 'autosave_reduction') {
-            currentSaveInterval -= node.effect.seconds;
-        }
-    }
-    currentSaveInterval = Math.max(1, currentSaveInterval); // Ensure interval doesn't go below 1 second
-
     saveTicker++;
-    if (saveTicker >= currentSaveInterval) {
+    if (saveTicker >= gameState.autosaveInterval) {
         saveTicker = 0;
         saveGameState();
     }
@@ -692,10 +684,9 @@ const updateSkillTreeUI = () => {
         { type: 'resource_boost', title: 'Resource Gains' },
         { type: 'gather_rate_boost', title: 'Gather Rate Boosts' },
         { type: 'offline_time_boost', title: 'Offline Progress' },
-        { type: 'autosave_reduction', title: 'Autosave Improvements' },
         { type: 'skill_unlock', title: 'Skill Unlocks' },
         { type: 'log_capacity', title: 'Log Capacity' },
-    } else if (node.type === 'storage_size') {
+        { type: 'storage_size', title: 'Storage Size' },
         { type: 'auto_ascension_unlock', title: 'Auto Ascension' },
         { type: 'generic', title: 'General Upgrades' }
     ];
@@ -785,7 +776,6 @@ const displayVersion = async () => {
         const data = await response.json();
         document.getElementById('version-display-menu').textContent = `v${data.version}`;
     } catch (error) {
-
         document.getElementById('version-display-menu').textContent = 'v?.?.?';
     }
 };
@@ -800,6 +790,7 @@ const updateAllUI = () => {
     }
     updateSlotSwitcherUI();
     updateAscendButton();
+    dom.autosaveIntervalInput.value = gameState.autosaveInterval;
 };
 
 // -----------------
@@ -865,6 +856,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.slotSwitcherBtn = document.getElementById('slot-switcher-btn');
     dom.openPrestigeBtn = document.getElementById('open-prestige-btn');
     dom.resetGameBtn = document.getElementById('reset-game-btn');
+    dom.autosaveIntervalInput = document.getElementById('autosave-interval');
 
     // Initialize Bootstrap Modals here
     dom.loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
@@ -877,6 +869,16 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.ascendBtn.addEventListener('click', ascend);
     dom.openPrestigeBtn.addEventListener('click', () => dom.prestigeModal.show());
     dom.resetGameBtn.addEventListener('click', resetGame);
+
+    dom.autosaveIntervalInput.addEventListener('change', () => {
+        const newInterval = parseInt(dom.autosaveIntervalInput.value);
+        if (!isNaN(newInterval) && newInterval > 0) {
+            gameState.autosaveInterval = newInterval;
+            addLog(`Autosave interval set to ${newInterval} seconds.`);
+        } else {
+            dom.autosaveIntervalInput.value = gameState.autosaveInterval;
+        }
+    });
 
     dom.actionContent.addEventListener('click', (e) => {
         if (e.target.id === 'start-fishing-btn') {

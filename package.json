@@ -1,6 +1,6 @@
 {
   "name": "idle-ascension",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "description": "An idle incremental game with cloud saving, inspired by RuneScape.",
   "main": "script.js",
   "author": "LightWraith8268"
