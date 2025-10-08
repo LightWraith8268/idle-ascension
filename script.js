@@ -508,7 +508,9 @@ const updateAllUI = () => {
     updateInventory();
     updateStats();
     setActiveSkill(gameState.activeSkill);
-    updateSkillTreeUI();
+    if (gameState.skillTree && gameState.skillTree.nodes) {
+        updateSkillTreeUI();
+    }
     updateSlotSwitcherUI();
     updateAscendButton();
 };
