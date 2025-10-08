@@ -176,8 +176,18 @@ const loadGameState = async (userId) => {
 
             userProfile.slots = userProfile.slots.map(slot => {
                 const baseGameState = getNewGameState();
-                const mergedSkillTreeNodes = { ...baseGameState.skillTree.nodes, ...(slot.skillTree ? slot.skillTree.nodes : {}) };
-                const mergedSkillTree = { ...baseGameState.skillTree, nodes: mergedSkillTreeNodes };
+                // Start with all base skill tree nodes
+                const newSkillTreeNodes = { ...baseGameState.skillTree.nodes };
+
+                // Merge purchased status from loaded slot onto the new skill tree nodes
+                if (slot.skillTree && slot.skillTree.nodes) {
+                    for (const nodeId in slot.skillTree.nodes) {
+                        if (newSkillTreeNodes[nodeId]) {
+                            newSkillTreeNodes[nodeId].purchased = slot.skillTree.nodes[nodeId].purchased;
+                        }
+                    }
+                }
+                const mergedSkillTree = { ...baseGameState.skillTree, nodes: newSkillTreeNodes };
                 return { ...baseGameState, ...slot, skillTree: mergedSkillTree };
             });
 
