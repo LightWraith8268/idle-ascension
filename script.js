@@ -216,19 +216,19 @@ const getNewGameState = () => {
             isFishing: false,
             fishingProgress: 0,
             fishingTime: 5, // 5 seconds to catch a fish
-            currentArea: 'tutorial_island'
+            currentArea: 'shimmering_shallows'
         },
         mining: {
             isMining: false,
             miningProgress: 0,
             miningTime: 5, // 5 seconds to mine an ore
-            currentZone: 'lumbridge_swamp'
+            currentZone: 'whispering_quarry'
         },
         woodcutting: {
             isChopping: false,
             choppingProgress: 0,
             choppingTime: 5, // 5 seconds to chop a tree
-            currentArea: 'lumbridge'
+            currentArea: 'whisperwood'
         },
         autosaveInterval: 15
     };
@@ -595,17 +595,15 @@ const purchaseSkillTreeNode = (nodeId) => {
         addLog(`Unlocked new skill: ${node.effect.skill}`);
     } else if (node.type === 'log_capacity') {
         // Log capacity is handled by MAX_LOG_MESSAGES, this node would need to modify that constant or a state variable
-                } else if (node.type === 'storage_size') {
-                    for (const item in gameState.storage) {
-                        gameState.storage[item].max += node.effect.amount;
-                    }
-                }
-                addLog(`Purchased upgrade: ${node.description}`);
-                updateAllUI();
-                saveGameState();
-            };
-
-const calculateFishingProgress = () => {
+                                } else if (node.type === 'storage_size') {
+                                    for (const item in gameState.storage) {
+                                        gameState.storage[item].max += node.effect.amount;
+                                    }
+                                }
+                                addLog(`Purchased upgrade: ${node.description}`);
+                                updateAllUI();
+                                saveGameState();
+                            };const calculateFishingProgress = () => {
     if (gameState.fishing.isFishing) {
         gameState.fishing.fishingProgress++;
         if (gameState.fishing.fishingProgress >= gameState.fishing.fishingTime) {

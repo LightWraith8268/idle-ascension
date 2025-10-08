@@ -10,15 +10,15 @@ const fishingData = {
         swordfish: { name: 'Swordfish', xp: 100, level: 50 },
     },
     areas: {
-        tutorial_island: {
-            name: 'Tutorial Island',
+        shimmering_shallows: {
+            name: 'Shimmering Shallows',
             level: 1,
             fish: {
                 shrimp: { chance: 1 },
             }
         },
-        karamja: {
-            name: 'Karamja',
+        serpent_sea: {
+            name: 'Serpent Sea',
             level: 20,
             fish: {
                 sardine: { chance: 0.5 },
@@ -27,8 +27,8 @@ const fishingData = {
                 lobster: { chance: 0.05 },
             }
         },
-        catherby: {
-            name: 'Catherby',
+        crystalfalls_cove: {
+            name: 'Crystalfalls Cove',
             level: 40,
             fish: {
                 tuna: { chance: 0.4 },
@@ -46,16 +46,16 @@ const miningData = {
         iron: { name: 'Iron Ore', xp: 35, level: 15 },
     },
     zones: {
-        lumbridge_swamp: {
-            name: 'Lumbridge Swamp',
+        whispering_quarry: {
+            name: 'Whispering Quarry',
             level: 1,
             ores: {
                 copper: { chance: 0.5 },
                 tin: { chance: 0.5 },
             }
         },
-        varrock_east: {
-            name: 'Varrock East',
+        dragon_breath_mine: {
+            name: 'Dragon\'s Breath Mine',
             level: 10,
             ores: {
                 copper: { chance: 0.2 },
@@ -73,23 +73,23 @@ const woodcuttingData = {
         willow: { name: 'Willow Tree', xp: 67.5, level: 30 },
     },
     areas: {
-        lumbridge: {
-            name: 'Lumbridge',
+        whisperwood: {
+            name: 'Whisperwood',
             level: 1,
             trees: {
                 normal: { chance: 1 },
             }
         },
-        draynor_village: {
-            name: 'Draynor Village',
+        crimson_forest: {
+            name: 'Crimson Forest',
             level: 10,
             trees: {
                 normal: { chance: 0.5 },
                 oak: { chance: 0.5 },
             }
         },
-        seers_village: {
-            name: 'Seers\' Village',
+        eldershade_thicket: {
+            name: 'Eldershade Thicket',
             level: 25,
             trees: {
                 oak: { chance: 0.5 },
