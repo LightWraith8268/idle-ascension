@@ -33,6 +33,7 @@ const dom = {
     slotList: null,
     slotSwitcherBtn: null,
     openPrestigeBtn: null,
+    resetGameBtn: null,
     loginModal: null,
     prestigeModal: null
 };
@@ -777,7 +778,18 @@ const startGame = async (user) => {
     gameLoopInterval = setInterval(gameTick, 1000);
 };
 
-const resetGame = () => {
+const resetGame = async () => {
+    if (!confirm("Are you sure you want to reset your game? All progress will be lost.")) return;
+
+    if (userProfile.userId) {
+        try {
+            await db.collection('users').doc(userProfile.userId).delete();
+            addLog("Game data reset on the server.");
+        } catch (error) {
+            addLog("Error resetting game data on the server.");
+        }
+    }
+
     userProfile = {
         userId: null,
         currentSlot: 0,
@@ -788,6 +800,7 @@ const resetGame = () => {
     gameLoopInterval = null;
     document.getElementById('user-email').textContent = '';
     updateAllUI();
+    location.reload();
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -814,6 +827,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.slotList = document.getElementById('slot-list');
     dom.slotSwitcherBtn = document.getElementById('slot-switcher-btn');
     dom.openPrestigeBtn = document.getElementById('open-prestige-btn');
+    dom.resetGameBtn = document.getElementById('reset-game-btn');
 
     // Initialize Bootstrap Modals here
     dom.loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
@@ -825,6 +839,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.signoutBtn.addEventListener('click', signOut);
     dom.ascendBtn.addEventListener('click', ascend);
     dom.openPrestigeBtn.addEventListener('click', () => dom.prestigeModal.show());
+    dom.resetGameBtn.addEventListener('click', resetGame);
 
     displayVersion();
 
