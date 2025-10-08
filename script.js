@@ -524,7 +524,7 @@ const resetGame = () => {
         currentSlot: 0,
         slots: []
     };
-    gameState = {};
+    gameState = getNewGameState();
     if (gameLoopInterval) clearInterval(gameLoopInterval);
     gameLoopInterval = null;
     document.getElementById('user-email').textContent = '';
