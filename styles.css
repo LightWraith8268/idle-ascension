@@ -70,3 +70,9 @@ body {
 .skill-tree-category .btn-outline-secondary[aria-expanded="true"] .fa-chevron-down {
     transform: rotate(180deg);
 }
+
+#version-display-menu {
+    color: #6c757d;
+    font-size: 0.8rem;
+    margin-left: 10px;
+}

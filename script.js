@@ -144,7 +144,7 @@ const getNewGameState = () => {
     currentParent = layer2Root;
     createOfflineTimeNode(7, currentParent, 2);
     createAutosaveNode(7, currentParent, 2);
-    createNode(10, 'storage', currentParent, 'inventory_size', { amount: 20 });
+    createNode(10, 'Increase storage size by 20.', currentParent, 'storage_size', { amount: 20 });
 
     // Branch 3: Skill Specialization
     currentParent = layer2Root;
@@ -195,12 +195,12 @@ const getNewGameState = () => {
         },
         skills: {
             woodcutting: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Logs', gatherRate: 1, baseXp: 10, maxStorage: 100 },
-            mining: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Ore', gatherRate: 1, baseXp: 15, locked: false, maxStorage: 100 },
+            mining: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Copper Ore', gatherRate: 1, baseXp: 15, locked: false, maxStorage: 100 },
             fishing: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Fish', gatherRate: 1, baseXp: 12, locked: false, maxStorage: 100 }
         },
-        inventory: { 
+        storage: { 
             Logs: { current: 0, max: 100 }, 
-            Ore: { current: 0, max: 100 }, 
+            'Copper Ore': { current: 0, max: 100 }, 
             Fish: { current: 0, max: 100 } 
         },
         activeSkill: 'woodcutting',
@@ -427,11 +427,11 @@ const calculateOfflineProgress = (offlineSeconds) => {
 
     resourcesGained *= actualOfflineTime;
 
-    let currentAmount = gameState.inventory[skill.resource].current;
-    let maxStorage = gameState.inventory[skill.resource].max;
+    let currentAmount = gameState.storage[skill.resource].current;
+    let maxStorage = gameState.storage[skill.resource].max;
     if (currentAmount < maxStorage) {
         let resourcesToGain = Math.min(resourcesGained, maxStorage - currentAmount);
-        gameState.inventory[skill.resource].current += resourcesToGain;
+        gameState.storage[skill.resource].current += resourcesToGain;
         gainXp(gameState.activeSkill, resourcesToGain);
     }
 
@@ -461,6 +461,47 @@ const ascend = () => {
 };
 
 const purchaseSkillTreeNode = (nodeId) => {
+    const node = gameState.skillTree.nodes[nodeId];
+
+    if (!node || node.purchased || gameState.ascensionPoints < node.cost) {
+        addLog('Cannot purchase this upgrade.');
+        return;
+    }
+
+    const requiredNode = gameState.skillTree.nodes[node.requires];
+    if (node.requires && (!requiredNode || !requiredNode.purchased)) {
+        addLog('Prerequisite not met for this upgrade.');
+        return;
+    }
+
+    gameState.ascensionPoints -= node.cost;
+    node.purchased = true;
+
+    if (node.type === 'xp_boost') {
+        // XP boosts are applied dynamically in gainXp
+    } else if (node.type === 'resource_boost') {
+        // Resource boosts are applied dynamically in gameTick and calculateOfflineProgress
+    } else if (node.type === 'gather_rate_boost') {
+        // Gather rate boosts are applied dynamically in gameTick and calculateOfflineProgress
+    } else if (node.type === 'offline_time_boost') {
+        // Offline time boost is applied dynamically in calculateOfflineProgress
+    } else if (node.type === 'autosave_reduction') {
+        // Autosave reduction is applied dynamically in gameTick
+    } else if (node.type === 'skill_unlock') {
+        gameState.skills[node.effect.skill].locked = false;
+        addLog(`Unlocked new skill: ${node.effect.skill}`);
+    } else if (node.type === 'log_capacity') {
+        // Log capacity is handled by MAX_LOG_MESSAGES, this node would need to modify that constant or a state variable
+    } else if (node.type === 'storage_size') {
+        for (const item in gameState.storage) {
+            gameState.storage[item].max += node.effect.amount;
+        }
+    }
+
+    addLog(`Purchased upgrade: ${node.description}`);
+    updateAllUI();
+    saveGameState();
+};
 
 const calculateFishingProgress = () => {
     if (gameState.fishing.isFishing) {
@@ -560,9 +601,9 @@ const updateSkillsList = () => {
 
 const updateStorage = () => {
     dom.storageContent.innerHTML = '';
-    for (const item in gameState.inventory) {
-        let amount = gameState.inventory[item].current;
-        if (amount > 0) {
+    for (const item in gameState.storage) {
+        let amount = gameState.storage[item].current;
+        if (gameState.storage[item].current > 0) {
             let roundedAmount = Math.round(amount);
             if (roundedAmount % 2 !== 0) {
                 roundedAmount = (amount > roundedAmount) ? roundedAmount + 1 : roundedAmount - 1;
@@ -571,7 +612,7 @@ const updateStorage = () => {
 
             const entry = document.createElement('div');
             entry.className = 'storage-entry';
-            entry.innerHTML = `<span>${item}:</span><span>${roundedAmount} / ${gameState.inventory[item].max}</span>`;
+            entry.innerHTML = `<span>${item}:</span><span>${roundedAmount} / ${gameState.storage[item].max}</span>`;
             dom.storageContent.appendChild(entry);
         }
     }
@@ -654,7 +695,7 @@ const updateSkillTreeUI = () => {
         { type: 'autosave_reduction', title: 'Autosave Improvements' },
         { type: 'skill_unlock', title: 'Skill Unlocks' },
         { type: 'log_capacity', title: 'Log Capacity' },
-        { type: 'inventory_size', title: 'Inventory Size' },
+    } else if (node.type === 'storage_size') {
         { type: 'auto_ascension_unlock', title: 'Auto Ascension' },
         { type: 'generic', title: 'General Upgrades' }
     ];
@@ -744,7 +785,7 @@ const displayVersion = async () => {
         const data = await response.json();
         document.getElementById('version-display-menu').textContent = `v${data.version}`;
     } catch (error) {
-        dom.versionDisplay.textContent = 'v?.?.?';
+
         document.getElementById('version-display-menu').textContent = 'v?.?.?';
     }
 };
