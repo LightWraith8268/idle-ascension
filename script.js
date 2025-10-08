@@ -24,7 +24,6 @@ const dom = {
     googleSigninBtn: null,
     signoutBtn: null,
     ascendBtn: null,
-    versionDisplay: null,
     skillsList: null,
     inventoryContent: null,
     actionPanelTitle: null,
@@ -663,7 +662,7 @@ const updateSkillTreeUI = () => {
 
             const collapseContainer = document.createElement('div');
             collapseContainer.id = categoryId;
-            collapseContainer.className = 'collapse show';
+            collapseContainer.className = 'collapse';
             categoryContainer.appendChild(collapseContainer);
 
             // Sort nodes within category for consistent display (e.g., by cost or requires)
@@ -729,7 +728,6 @@ const displayVersion = async () => {
     try {
         const response = await fetch('package.json');
         const data = await response.json();
-        dom.versionDisplay.textContent = `v${data.version}`;
         document.getElementById('version-display-menu').textContent = `v${data.version}`;
     } catch (error) {
         dom.versionDisplay.textContent = 'v?.?.?';
@@ -790,7 +788,6 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.googleSigninBtn = document.getElementById('google-signin-btn');
     dom.signoutBtn = document.getElementById('signout-btn');
     dom.ascendBtn = document.getElementById('ascend-btn');
-    dom.versionDisplay = document.getElementById('version-display');
     dom.skillsList = document.getElementById('skills-list');
     dom.inventoryContent = document.getElementById('inventory-content');
     dom.actionPanelTitle = document.getElementById('action-panel-title');
