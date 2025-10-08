@@ -399,8 +399,20 @@ const updateInventory = () => {
 };
 
 const setActiveSkill = (skillName) => {
+    if (!gameState.skills || Object.keys(gameState.skills).length === 0) {
+        dom.actionPanelTitle.textContent = "Welcome";
+        dom.actionContent.innerHTML = '<p>Select a skill from the left to begin.</p>';
+        return;
+    }
+
     gameState.activeSkill = skillName;
     const skill = gameState.skills[skillName];
+    if (!skill) {
+        dom.actionPanelTitle.textContent = "Welcome";
+        dom.actionContent.innerHTML = '<p>Select a skill from the left to begin.</p>';
+        return;
+    }
+
     dom.actionPanelTitle.textContent = skillName.charAt(0).toUpperCase() + skillName.slice(1);
     dom.actionContent.innerHTML = `
         <p>Currently training ${skillName}.</p>
