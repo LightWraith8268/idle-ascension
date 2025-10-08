@@ -493,8 +493,7 @@ const purchaseSkillTreeNode = (nodeId) => {
         for (const item in gameState.inventory) {
             gameState.inventory[item].max += node.effect.amount;
         }
-
-
+    }
     addLog(`Purchased upgrade: ${node.description}`);
     updateAllUI();
     saveGameState();
