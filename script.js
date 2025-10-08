@@ -675,7 +675,8 @@ const updateSkillTreeUI = () => {
                 const button = document.createElement('button');
                 button.className = `btn m-2 skill-node-btn ${node.type}-node`;
                 button.innerHTML = `${node.description}<br><small>Cost: ${node.cost} AP</small>`;
-                button.onclick = () => purchaseSkillTreeNode(Object.keys(gameState.skillTree.nodes).find(id => gameState.skillTree.nodes[id] === node));
+                const nodeId = Object.keys(gameState.skillTree.nodes).find(id => gameState.skillTree.nodes[id] === node);
+                button.onclick = () => purchaseSkillTreeNode(nodeId);
 
                 if (node.purchased) {
                     button.classList.add('btn-success');
