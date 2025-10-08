@@ -30,7 +30,7 @@ const dom = {
     actionPanelTitle: document.getElementById('action-panel-title'),
     actionContent: document.getElementById('action-content'),
     ascensionPointsDisplay: document.getElementById('ascension-points-display'),
-    skillTreeContent: document.getElementById('skill-tree-content'),
+    skillTreeContent: document.getElementById('prestige-skill-tree-content'),
     slotList: document.getElementById('slot-list'),
     slotSwitcherBtn: document.getElementById('slot-switcher-btn'),
     openPrestigeBtn: document.getElementById('open-prestige-btn'),
