@@ -53,3 +53,11 @@ body {
 .skill-button:hover {
     background-color: #4a4a4a;
 }
+
+.skill-tree-category .btn-outline-secondary {
+    transition: transform 0.2s ease-in-out;
+}
+
+.skill-tree-category .btn-outline-secondary[aria-expanded="true"] .fa-chevron-down {
+    transform: rotate(180deg);
+}

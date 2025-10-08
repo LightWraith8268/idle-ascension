@@ -649,9 +649,22 @@ const updateSkillTreeUI = () => {
     categoryOrder.forEach(categoryInfo => {
         const nodesInType = categorizedNodes[categoryInfo.type];
         if (nodesInType && nodesInType.length > 0) {
+            const categoryId = `category-collapse-${categoryInfo.type}`;
             const categoryContainer = document.createElement('div');
             categoryContainer.className = `skill-tree-category ${categoryInfo.type}-category mb-4 p-3 border rounded`;
-            categoryContainer.innerHTML = `<h5 class="text-white border-bottom pb-2 mb-3">${categoryInfo.title}</h5>`;
+
+            const categoryHeader = document.createElement('div');
+            categoryHeader.className = 'd-flex justify-content-between align-items-center';
+            categoryHeader.innerHTML = `<h5 class="text-white mb-0">${categoryInfo.title}</h5>
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#${categoryId}" aria-expanded="true" aria-controls="${categoryId}">
+                    <i class="fas fa-chevron-down"></i>
+                </button>`;
+            categoryContainer.appendChild(categoryHeader);
+
+            const collapseContainer = document.createElement('div');
+            collapseContainer.id = categoryId;
+            collapseContainer.className = 'collapse show';
+            categoryContainer.appendChild(collapseContainer);
 
             // Sort nodes within category for consistent display (e.g., by cost or requires)
             nodesInType.sort((a, b) => a.cost - b.cost);
@@ -662,7 +675,7 @@ const updateSkillTreeUI = () => {
                 const button = document.createElement('button');
                 button.className = `btn m-2 skill-node-btn ${node.type}-node`;
                 button.innerHTML = `${node.description}<br><small>Cost: ${node.cost} AP</small>`;
-                button.onclick = () => purchaseSkillTreeNode(node.id); // Use node.id here
+                button.onclick = () => purchaseSkillTreeNode(Object.keys(gameState.skillTree.nodes).find(id => gameState.skillTree.nodes[id] === node));
 
                 if (node.purchased) {
                     button.classList.add('btn-success');
@@ -673,7 +686,7 @@ const updateSkillTreeUI = () => {
                     button.classList.add('btn-secondary');
                     button.disabled = true;
                 }
-                categoryContainer.appendChild(button);
+                collapseContainer.appendChild(button);
             });
             dom.skillTreeContent.appendChild(categoryContainer);
         }
@@ -716,8 +729,10 @@ const displayVersion = async () => {
         const response = await fetch('package.json');
         const data = await response.json();
         dom.versionDisplay.textContent = `v${data.version}`;
+        document.getElementById('version-display-menu').textContent = `v${data.version}`;
     } catch (error) {
         dom.versionDisplay.textContent = 'v?.?.?';
+        document.getElementById('version-display-menu').textContent = 'v?.?.?';
     }
 };
 
