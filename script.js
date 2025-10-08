@@ -462,6 +462,13 @@ const ascend = () => {
     updateAllUI();
 };
 
+const fishCaught = () => {
+    addLog("You caught a fish!");
+    gameState.storage.Fish.current++;
+    gainXp('fishing', 1);
+    updateStorage();
+};
+
 const purchaseSkillTreeNode = (nodeId) => {
     const node = gameState.skillTree.nodes[nodeId];
 
@@ -494,16 +501,15 @@ const purchaseSkillTreeNode = (nodeId) => {
         addLog(`Unlocked new skill: ${node.effect.skill}`);
     } else if (node.type === 'log_capacity') {
         // Log capacity is handled by MAX_LOG_MESSAGES, this node would need to modify that constant or a state variable
-        } else if (node.type === 'storage_size') {
-            for (const item in gameState.storage) {
-                gameState.storage[item].max += node.effect.amount;
-            }
-        }
-    
-        addLog(`Purchased upgrade: ${node.description}`);
-        updateAllUI();
-        saveGameState();
-    };
+                } else if (node.type === 'storage_size') {
+                    for (const item in gameState.storage) {
+                        gameState.storage[item].max += node.effect.amount;
+                    }
+                }
+                addLog(`Purchased upgrade: ${node.description}`);
+                updateAllUI();
+                saveGameState();
+            };
 
 const calculateFishingProgress = () => {
     if (gameState.fishing.isFishing) {
@@ -517,7 +523,7 @@ const calculateFishingProgress = () => {
 
 const gameTick = () => {
     const skill = gameState.skills[gameState.activeSkill];
-    if (skill && skill.gatherRate > 0) {
+    if (skill && skill.gatherRate > 0 && gameState.activeSkill !== 'fishing') {
         let resourcesGained = skill.gatherRate;
 
         let allResourceMultiplier = 1;
@@ -544,13 +550,14 @@ const gameTick = () => {
             }
         }
 
-            let currentAmount = gameState.storage[skill.resource].current;
-            let maxStorage = gameState.storage[skill.resource].max;
-            if (currentAmount < maxStorage) {
-                let resourcesToGain = Math.min(resourcesGained, maxStorage - currentAmount);
-                gameState.storage[skill.resource].current += resourcesToGain;
-                gainXp(gameState.activeSkill, resourcesToGain);
-            }        updateStorage();
+        let currentAmount = gameState.storage[skill.resource].current;
+        let maxStorage = gameState.storage[skill.resource].max;
+        if (currentAmount < maxStorage) {
+            let resourcesToGain = Math.min(resourcesGained, maxStorage - currentAmount);
+            gameState.storage[skill.resource].current += resourcesToGain;
+            gainXp(gameState.activeSkill, resourcesToGain);
+        }
+        updateStorage();
     }
 
     calculateFishingProgress();
@@ -595,18 +602,16 @@ const updateStorage = () => {
     dom.storageContent.innerHTML = '';
     for (const item in gameState.storage) {
         let amount = gameState.storage[item].current;
-        if (gameState.storage[item].current > 0) {
-            let roundedAmount = Math.round(amount);
-            if (roundedAmount % 2 !== 0) {
-                roundedAmount = (amount > roundedAmount) ? roundedAmount + 1 : roundedAmount - 1;
-            }
-            if (roundedAmount < 0) roundedAmount = 0;
-
-            const entry = document.createElement('div');
-            entry.className = 'storage-entry';
-            entry.innerHTML = `<span>${item}:</span><span>${roundedAmount} / ${gameState.storage[item].max}</span>`;
-            dom.storageContent.appendChild(entry);
+        let roundedAmount = Math.round(amount);
+        if (roundedAmount % 2 !== 0) {
+            roundedAmount = (amount > roundedAmount) ? roundedAmount + 1 : roundedAmount - 1;
         }
+        if (roundedAmount < 0) roundedAmount = 0;
+
+        const entry = document.createElement('div');
+        entry.className = 'storage-entry';
+        entry.innerHTML = `<span>${item}:</span><span>${roundedAmount} / ${gameState.storage[item].max}</span>`;
+        dom.storageContent.appendChild(entry);
     }
 };
 
