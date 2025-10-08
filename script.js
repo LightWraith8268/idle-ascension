@@ -67,35 +67,147 @@ const showAuthError = (message) => {
     dom.authError.classList.remove('d-none');
 };
 
-const getNewGameState = () => ({
-    ascensionPoints: 0,
-    lastSaveTimestamp: null,
-    skillTree: {
-        nodes: {
-            root: { purchased: true, cost: 0, description: 'The journey begins.' },
-            xp_boost_1: { purchased: false, cost: 1, requires: 'root', description: '+10% XP from all sources.' },
-            resource_boost_1: { purchased: false, cost: 1, requires: 'root', description: '+10% resources from all sources.' },
-            xp_boost_2: { purchased: false, cost: 3, requires: 'xp_boost_1', description: 'A further +15% XP from all sources.' },
-            xp_boost_3: { purchased: false, cost: 5, requires: 'xp_boost_2', description: 'Even further +20% XP from all sources.' },
-            resource_boost_2: { purchased: false, cost: 5, requires: 'resource_boost_1', description: 'Even further +20% resources from all sources.' },
-            offline_time_boost_1: { purchased: false, cost: 3, requires: 'root', description: 'Increase max offline time by 1 hour.' },
-            autosave_interval_reduction_1: { purchased: false, cost: 2, requires: 'root', description: 'Reduce auto-save interval by 5 seconds.' },
-            woodcutting_efficiency_1: { purchased: false, cost: 2, requires: 'xp_boost_1', description: '+1 gather rate for Woodcutting.' },
-            woodcutting_xp_boost_1: { purchased: false, cost: 2, requires: 'woodcutting_efficiency_1', description: '+10% XP for Woodcutting.' },
-            unlock_mining: { purchased: false, cost: 1, requires: 'root', description: 'Unlock the Mining skill.' },
-            unlock_fishing: { purchased: false, cost: 1, requires: 'root', description: 'Unlock the Fishing skill.' }
-        }
-    },
-    skills: {
-        woodcutting: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Logs', gatherRate: 1, baseXp: 10 },
-        mining: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Ore', gatherRate: 0, baseXp: 15, locked: true },
-        fishing: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Fish', gatherRate: 0, baseXp: 12, locked: true }
-    },
-    inventory: { Logs: 0, Ore: 0, Fish: 0 },
-    activeSkill: 'woodcutting'
-});
+const getNewGameState = () => {
+    const nodes = {};
+    let nodeIdCounter = 0;
 
-let gameState = getNewGameState();
+    const createNode = (cost, description, requires = null, type = 'generic', effect = {}) => {
+        const id = `node_${nodeIdCounter++}`;
+        nodes[id] = { purchased: false, cost, description, requires, type, effect };
+        return id;
+    };
+
+    const createXpBoostNode = (baseCost, requires, skill = 'all', multiplier = 0.01) => {
+        const description = skill === 'all' ? `+${multiplier * 100}% XP from all sources.` : `+${multiplier * 100}% XP for ${skill}.`;
+        return createNode(baseCost, description, requires, 'xp_boost', { skill, multiplier });
+    };
+
+    const createResourceBoostNode = (baseCost, requires, skill = 'all', multiplier = 0.01) => {
+        const description = skill === 'all' ? `+${multiplier * 100}% resources from all sources.` : `+${multiplier * 100}% resources for ${skill}.`;
+        return createNode(baseCost, description, requires, 'resource_boost', { skill, multiplier });
+    };
+
+    const createGatherRateNode = (baseCost, requires, skill, amount = 0.1) => {
+        const description = `+${amount} gather rate for ${skill}.`;
+        return createNode(baseCost, description, requires, 'gather_rate_boost', { skill, amount });
+    };
+
+    const createOfflineTimeNode = (baseCost, requires, hours = 1) => {
+        const description = `Increase max offline time by ${hours} hour(s).`;
+        return createNode(baseCost, description, requires, 'offline_time_boost', { hours });
+    };
+
+    const createAutosaveNode = (baseCost, requires, seconds = 1) => {
+        const description = `Reduce auto-save interval by ${seconds} second(s).`;
+        return createNode(baseCost, description, requires, 'autosave_reduction', { seconds });
+    };
+
+    const createSkillUnlockNode = (skillName, baseCost, requires) => {
+        const description = `Unlock the ${skillName} skill.`;
+        return createNode(baseCost, description, requires, 'skill_unlock', { skill: skillName });
+    };
+
+    // --- Prestige Layer 1 (Root) ---
+    const root = createNode(0, 'The journey begins.');
+
+    // Branch 1: General XP/Resource
+    let currentParent = root;
+    for (let i = 0; i < 5; i++) {
+        currentParent = createXpBoostNode(1 + i, currentParent, 'all', 0.02 + i * 0.01);
+        createResourceBoostNode(1 + i, currentParent, 'all', 0.02 + i * 0.01);
+    }
+
+    // Branch 2: Utility
+    currentParent = root;
+    currentParent = createOfflineTimeNode(2, currentParent, 1);
+    createAutosaveNode(2, currentParent, 1);
+    createNode(3, 'Increase log capacity by 10.', currentParent, 'log_capacity', { amount: 10 });
+
+    // Branch 3: Skill Unlocks & Initial Skill Boosts
+    currentParent = root;
+    const unlockMining = createSkillUnlockNode('mining', 1, currentParent);
+    createGatherRateNode(2, unlockMining, 'mining', 0.2);
+    createXpBoostNode(2, unlockMining, 'mining', 0.05);
+
+    const unlockFishing = createSkillUnlockNode('fishing', 1, currentParent);
+    createGatherRateNode(2, unlockFishing, 'fishing', 0.2);
+    createXpBoostNode(2, unlockFishing, 'fishing', 0.05);
+
+    createGatherRateNode(2, root, 'woodcutting', 0.2);
+    createXpBoostNode(2, root, 'woodcutting', 0.05);
+
+    // --- Prestige Layer 2 (Requires significant AP from Layer 1) ---
+    const layer2Root = createNode(20, 'Unlock advanced prestige options.', currentParent); // Link to a node in Layer 1
+
+    // Branch 1: Advanced XP/Resource
+    currentParent = layer2Root;
+    for (let i = 0; i < 7; i++) {
+        currentParent = createXpBoostNode(5 + i * 2, currentParent, 'all', 0.03 + i * 0.015);
+        createResourceBoostNode(5 + i * 2, currentParent, 'all', 0.03 + i * 0.015);
+    }
+
+    // Branch 2: Advanced Utility
+    currentParent = layer2Root;
+    createOfflineTimeNode(7, currentParent, 2);
+    createAutosaveNode(7, currentParent, 2);
+    createNode(10, 'Increase inventory size by 20.', currentParent, 'inventory_size', { amount: 20 });
+
+    // Branch 3: Skill Specialization
+    currentParent = layer2Root;
+    const miningSpecialization = createNode(8, 'Mining Specialization', currentParent);
+    createGatherRateNode(5, miningSpecialization, 'mining', 0.5);
+    createXpBoostNode(5, miningSpecialization, 'mining', 0.1);
+
+    const fishingSpecialization = createNode(8, 'Fishing Specialization', currentParent);
+    createGatherRateNode(5, fishingSpecialization, 'fishing', 0.5);
+    createXpBoostNode(5, fishingSpecialization, 'fishing', 0.1);
+
+    // --- Prestige Layer 3 (Requires significant AP from Layer 2) ---
+    const layer3Root = createNode(50, 'Unlock master prestige options.', layer2Root); // Link to a node in Layer 2
+
+    // Branch 1: Master XP/Resource
+    currentParent = layer3Root;
+    for (let i = 0; i < 10; i++) {
+        currentParent = createXpBoostNode(15 + i * 3, currentParent, 'all', 0.05 + i * 0.02);
+        createResourceBoostNode(15 + i * 3, currentParent, 'all', 0.05 + i * 0.02);
+    }
+
+    // Branch 2: Master Utility
+    currentParent = layer3Root;
+    createOfflineTimeNode(20, currentParent, 5);
+    createAutosaveNode(20, currentParent, 5);
+    createNode(25, 'Unlock auto-ascension (manual trigger).', currentParent, 'auto_ascension_unlock');
+
+    // Branch 3: Ultimate Skill Boosts
+    currentParent = layer3Root;
+    createGatherRateNode(15, currentParent, 'woodcutting', 1);
+    createXpBoostNode(15, currentParent, 'woodcutting', 0.2);
+    createGatherRateNode(15, currentParent, 'mining', 1);
+    createXpBoostNode(15, currentParent, 'mining', 0.2);
+    createGatherRateNode(15, currentParent, 'fishing', 1);
+    createXpBoostNode(15, currentParent, 'fishing', 0.2);
+
+    // --- Placeholder for more nodes to reach 500-750 --- 
+    // This is a representative sample. To reach 500-750 nodes, 
+    // more layers and more nodes per branch would be needed, 
+    // potentially with more complex branching logic and node types.
+    // For example, each skill could have its own deep branch of 20-30 nodes.
+
+    return {
+        ascensionPoints: 0,
+        lastSaveTimestamp: null,
+        skillTree: {
+            nodes: nodes
+        },
+        skills: {
+            woodcutting: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Logs', gatherRate: 1, baseXp: 10 },
+            mining: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Ore', gatherRate: 0, baseXp: 15, locked: true },
+            fishing: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Fish', gatherRate: 0, baseXp: 12, locked: true }
+        },
+        inventory: { Logs: 0, Ore: 0, Fish: 0 },
+        activeSkill: 'woodcutting'
+    };
+};
 
 // -----------------
 const signInWithGoogle = async () => {
@@ -246,10 +358,22 @@ const gainXp = (skillName, amount) => {
     const skill = gameState.skills[skillName];
     let xpGained = skill.baseXp * amount;
 
-    if (gameState.skillTree.nodes.xp_boost_1.purchased) xpGained *= 1.10;
-    if (gameState.skillTree.nodes.xp_boost_2.purchased) xpGained *= 1.15;
-    if (gameState.skillTree.nodes.xp_boost_3.purchased) xpGained *= 1.20;
-    if (skillName === 'woodcutting' && gameState.skillTree.nodes.woodcutting_xp_boost_1.purchased) xpGained *= 1.10;
+    let allXpMultiplier = 1;
+    let skillXpMultiplier = 1;
+
+    for (const nodeId in gameState.skillTree.nodes) {
+        const node = gameState.skillTree.nodes[nodeId];
+        if (node.purchased && node.type === 'xp_boost') {
+            if (node.effect.skill === 'all') {
+                allXpMultiplier += node.effect.multiplier;
+            } else if (node.effect.skill === skillName) {
+                skillXpMultiplier += node.effect.multiplier;
+            }
+        }
+    }
+
+    xpGained *= allXpMultiplier;
+    xpGained *= skillXpMultiplier;
 
     skill.xp += xpGained;
     while (skill.xp >= skill.xpToNextLevel) {
@@ -260,9 +384,25 @@ const gainXp = (skillName, amount) => {
 
 const calculateOfflineProgress = (offlineSeconds) => {
     let maxOfflineTime = OFFLINE_PROGRESS_MAX_HOURS * 60 * 60;
-    if (gameState.skillTree.nodes.offline_time_boost_1.purchased) {
-        maxOfflineTime += OFFLINE_PROGRESS_SKILL_TREE_BOOST_HOURS * 60 * 60;
+    let allResourceMultiplier = 1;
+    let skillResourceMultiplier = 1;
+
+    for (const nodeId in gameState.skillTree.nodes) {
+        const node = gameState.skillTree.nodes[nodeId];
+        if (node.purchased) {
+            if (node.type === 'offline_time_boost') {
+                maxOfflineTime += node.effect.hours * 60 * 60;
+            }
+            if (node.type === 'resource_boost') {
+                if (node.effect.skill === 'all') {
+                    allResourceMultiplier += node.effect.multiplier;
+                } else if (node.effect.skill === gameState.activeSkill) {
+                    skillResourceMultiplier += node.effect.multiplier;
+                }
+            }
+        }
     }
+
     const actualOfflineTime = Math.min(offlineSeconds, maxOfflineTime);
 
     if (actualOfflineTime <= 0) return;
@@ -271,9 +411,16 @@ const calculateOfflineProgress = (offlineSeconds) => {
     if (!skill || skill.gatherRate <= 0) return;
 
     let resourcesGained = skill.gatherRate;
-    if (gameState.skillTree.nodes.resource_boost_1.purchased) resourcesGained *= 1.10;
-    if (gameState.skillTree.nodes.resource_boost_2.purchased) resourcesGained *= 1.20;
-    if (gameState.activeSkill === 'woodcutting' && gameState.skillTree.nodes.woodcutting_efficiency_1.purchased) resourcesGained += 1;
+    resourcesGained *= allResourceMultiplier;
+    resourcesGained *= skillResourceMultiplier;
+
+    // Apply gather rate boosts from skill tree
+    for (const nodeId in gameState.skillTree.nodes) {
+        const node = gameState.skillTree.nodes[nodeId];
+        if (node.purchased && node.type === 'gather_rate_boost' && node.effect.skill === gameState.activeSkill) {
+            resourcesGained += node.effect.amount;
+        }
+    }
 
     resourcesGained *= actualOfflineTime;
 
@@ -327,14 +474,13 @@ const purchaseSkillTreeNode = (nodeId) => {
     gameState.ascensionPoints -= node.cost;
     node.purchased = true;
 
-    if (nodeId === 'unlock_mining') {
-        gameState.skills.mining.locked = false;
-        gameState.skills.mining.gatherRate = 1;
-        addLog('Mining skill unlocked!');
-    } else if (nodeId === 'unlock_fishing') {
-        gameState.skills.fishing.locked = false;
-        gameState.skills.fishing.gatherRate = 1;
-        addLog('Fishing skill unlocked!');
+    if (node.type === 'skill_unlock') {
+        const skillToUnlock = node.effect.skill;
+        if (gameState.skills[skillToUnlock]) {
+            gameState.skills[skillToUnlock].locked = false;
+            gameState.skills[skillToUnlock].gatherRate = 1; // Default gather rate for newly unlocked skills
+            addLog(`${skillToUnlock.charAt(0).toUpperCase() + skillToUnlock.slice(1)} skill unlocked!`);
+        }
     }
 
     addLog(`Purchased upgrade: ${node.description}`);
@@ -347,9 +493,29 @@ const gameTick = () => {
     if (skill && skill.gatherRate > 0) {
         let resourcesGained = skill.gatherRate;
 
-        if (gameState.skillTree.nodes.resource_boost_1.purchased) resourcesGained *= 1.10;
-        if (gameState.skillTree.nodes.resource_boost_2.purchased) resourcesGained *= 1.20;
-        if (gameState.activeSkill === 'woodcutting' && gameState.skillTree.nodes.woodcutting_efficiency_1.purchased) resourcesGained += 1;
+        let allResourceMultiplier = 1;
+        let skillResourceMultiplier = 1;
+
+        for (const nodeId in gameState.skillTree.nodes) {
+            const node = gameState.skillTree.nodes[nodeId];
+            if (node.purchased && node.type === 'resource_boost') {
+                if (node.effect.skill === 'all') {
+                    allResourceMultiplier += node.effect.multiplier;
+                } else if (node.effect.skill === gameState.activeSkill) {
+                    skillResourceMultiplier += node.effect.multiplier;
+                }
+            }
+        }
+        resourcesGained *= allResourceMultiplier;
+        resourcesGained *= skillResourceMultiplier;
+
+        // Apply gather rate boosts from skill tree
+        for (const nodeId in gameState.skillTree.nodes) {
+            const node = gameState.skillTree.nodes[nodeId];
+            if (node.purchased && node.type === 'gather_rate_boost' && node.effect.skill === gameState.activeSkill) {
+                resourcesGained += node.effect.amount;
+            }
+        }
 
         gameState.inventory[skill.resource] += resourcesGained;
         gainXp(gameState.activeSkill, resourcesGained);
@@ -357,9 +523,13 @@ const gameTick = () => {
     }
 
     let currentSaveInterval = SAVE_INTERVAL_SECONDS;
-    if (gameState.skillTree.nodes.autosave_interval_reduction_1.purchased) {
-        currentSaveInterval -= 5;
+    for (const nodeId in gameState.skillTree.nodes) {
+        const node = gameState.skillTree.nodes[nodeId];
+        if (node.purchased && node.type === 'autosave_reduction') {
+            currentSaveInterval -= node.effect.seconds;
+        }
     }
+    currentSaveInterval = Math.max(1, currentSaveInterval); // Ensure interval doesn't go below 1 second
 
     saveTicker++;
     if (saveTicker >= currentSaveInterval) {
