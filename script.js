@@ -559,6 +559,9 @@ const updateSkillsList = () => {
         const xpPercent = (skill.xp / skill.xpToNextLevel) * 100;
         const skillButton = document.createElement('div');
         skillButton.className = 'skill-button';
+        if (skillName === gameState.activeSkill) {
+            skillButton.classList.add('active-skill');
+        }
         skillButton.onclick = () => setActiveSkill(skillName);
         skillButton.innerHTML = `
             <div class="d-flex justify-content-between">
@@ -608,6 +611,8 @@ const setActiveSkill = (skillName) => {
         dom.actionContent.innerHTML = '<p>Select a skill from the left to begin.</p>';
         return;
     }
+
+    updateSkillsList();
 
     dom.actionPanelTitle.textContent = skillName.charAt(0).toUpperCase() + skillName.slice(1);
     dom.actionContent.innerHTML = `

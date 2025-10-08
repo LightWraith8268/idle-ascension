@@ -54,6 +54,15 @@ body {
     background-color: #4a4a4a;
 }
 
+.progress-bar {
+    color: black;
+    text-align: center;
+}
+
+.active-skill {
+    border: 2px solid #ffc107;
+}
+
 .skill-tree-category .btn-outline-secondary {
     transition: transform 0.2s ease-in-out;
 }
