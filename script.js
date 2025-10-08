@@ -100,6 +100,7 @@ const signInWithGoogle = async () => {
     const provider = new firebase.auth.GoogleAuthProvider();
     try {
         await auth.signInWithPopup(provider);
+        addLog('Signed in with Google successfully!');
     } catch (error) {
         showAuthError(error.message);
     }
@@ -110,6 +111,7 @@ const signInWithEmail = async () => {
     const password = dom.signinPassword.value;
     try {
         await auth.signInWithEmailAndPassword(email, password);
+        addLog('Signed in with email successfully!');
     } catch (error) {
         showAuthError(error.message);
     }
@@ -120,6 +122,7 @@ const signUpWithEmail = async () => {
     const password = dom.signupPassword.value;
     try {
         await auth.createUserWithEmailAndPassword(email, password);
+        addLog('Signed up with email successfully!');
     } catch (error) {
         showAuthError(error.message);
     }
@@ -128,6 +131,7 @@ const signUpWithEmail = async () => {
 const signOut = async () => {
     try {
         await auth.signOut();
+        addLog('Signed out successfully!');
     } catch (error) {
         // Error handling for sign out can be minimal as it's less critical
     }
