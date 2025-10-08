@@ -33,7 +33,9 @@ const dom = {
     skillTreeContent: document.getElementById('skill-tree-content'),
     slotList: document.getElementById('slot-list'),
     slotSwitcherBtn: document.getElementById('slot-switcher-btn'),
-    loginModal: new bootstrap.Modal(document.getElementById('loginModal'))
+    openPrestigeBtn: document.getElementById('open-prestige-btn'),
+    loginModal: new bootstrap.Modal(document.getElementById('loginModal')),
+    prestigeModal: new bootstrap.Modal(document.getElementById('prestigeModal'))
 };
 
 // -----------------
@@ -549,6 +551,7 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.googleSigninBtn.addEventListener('click', signInWithGoogle);
     dom.signoutBtn.addEventListener('click', signOut);
     dom.ascendBtn.addEventListener('click', ascend);
+    dom.openPrestigeBtn.addEventListener('click', () => dom.prestigeModal.show());
 
     displayVersion();
 

@@ -46,20 +46,9 @@
                         </div>
                     </div>
 
-                    <!-- Prestige -->
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="heading-prestige">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-prestige" aria-expanded="false" aria-controls="collapse-prestige">
-                                Prestige
-                            </button>
-                        </h2>
-                        <div id="collapse-prestige" class="accordion-collapse collapse" aria-labelledby="heading-prestige" data-bs-parent="#main-menu-accordion">
-                            <div class="accordion-body">
-                                <div id="skill-tree-content">
-                                    <!-- Skill tree will be dynamically added here -->
-                                </div>
-                            </div>
-                        </div>
+                    <!-- Prestige Button -->
+                    <div class="mb-3">
+                        <button class="btn btn-secondary w-100" id="open-prestige-btn">Prestige Tree</button>
                     </div>
 
                     <!-- Settings -->
@@ -204,5 +193,22 @@
 
     <!-- Game Script -->
     <script src="script.js?v=1.2.9"></script>
+
+    <!-- Prestige Modal -->
+    <div class="modal fade" id="prestigeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="prestigeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content text-white" style="background-color: #2a2a2a;">
+                <div class="modal-header border-bottom border-secondary">
+                    <h5 class="modal-title" id="prestigeModalLabel">Prestige Tree</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="skill-tree-content" class="d-flex flex-wrap justify-content-center">
+                        <!-- Skill tree will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
