@@ -44,7 +44,7 @@ let userProfile = {
     currentSlot: 0,
     slots: []
 };
-let gameState = {};
+let gameState = getNewGameState();
 let saveTicker = 0;
 let gameLoopInterval = null;
 
