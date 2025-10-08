@@ -203,7 +203,12 @@ const getNewGameState = () => {
             Ore: { current: 0, max: 100 }, 
             Fish: { current: 0, max: 100 } 
         },
-        activeSkill: 'woodcutting'
+        activeSkill: 'woodcutting',
+        fishing: {
+            isFishing: false,
+            fishingProgress: 0,
+            fishingTime: 5 // 5 seconds to catch a fish
+        }
     };
 };
 
@@ -456,42 +461,15 @@ const ascend = () => {
 };
 
 const purchaseSkillTreeNode = (nodeId) => {
-    const node = gameState.skillTree.nodes[nodeId];
-    const requiredNode = gameState.skillTree.nodes[node.requires];
 
-    if (node.purchased) {
-        addLog("You have already purchased this upgrade.");
-        return;
-    }
-
-    if (gameState.ascensionPoints < node.cost) {
-        addLog("You do not have enough Ascension Points.");
-        return;
-    }
-
-    if (requiredNode && !requiredNode.purchased) {
-        addLog("You must purchase the prerequisite upgrade first.");
-        return;
-    }
-
-    gameState.ascensionPoints -= node.cost;
-    node.purchased = true;
-
-    if (node.type === 'skill_unlock') {
-        const skillToUnlock = node.effect.skill;
-        if (gameState.skills[skillToUnlock]) {
-            gameState.skills[skillToUnlock].locked = false;
-            gameState.skills[skillToUnlock].gatherRate = 1; // Default gather rate for newly unlocked skills
-            addLog(`${skillToUnlock.charAt(0).toUpperCase() + skillToUnlock.slice(1)} skill unlocked!`);
-        }
-    } else if (node.type === 'inventory_size') {
-        for (const item in gameState.inventory) {
-            gameState.inventory[item].max += node.effect.amount;
+const calculateFishingProgress = () => {
+    if (gameState.fishing.isFishing) {
+        gameState.fishing.fishingProgress++;
+        if (gameState.fishing.fishingProgress >= gameState.fishing.fishingTime) {
+            gameState.fishing.fishingProgress = 0;
+            fishCaught();
         }
     }
-    addLog(`Purchased upgrade: ${node.description}`);
-    updateAllUI();
-    saveGameState();
 };
 
 const gameTick = () => {
@@ -532,6 +510,8 @@ const gameTick = () => {
         }
         updateStorage();
     }
+
+    calculateFishingProgress();
 
     let currentSaveInterval = SAVE_INTERVAL_SECONDS;
     for (const nodeId in gameState.skillTree.nodes) {
@@ -615,10 +595,27 @@ const setActiveSkill = (skillName) => {
     updateSkillsList();
 
     dom.actionPanelTitle.textContent = skillName.charAt(0).toUpperCase() + skillName.slice(1);
-    dom.actionContent.innerHTML = `
-        <p>Currently training ${skillName}.</p>
-        <p>XP/sec: ${skill.gatherRate * skill.baseXp}</p>
-    `;
+    if (skillName === 'fishing') {
+        if (gameState.fishing.isFishing) {
+            dom.actionContent.innerHTML = `
+                <p>Currently fishing...</p>
+                <div class="progress" style="height: 20px;">
+                    <div class="progress-bar bg-info" role="progressbar" style="width: ${(gameState.fishing.fishingProgress / gameState.fishing.fishingTime) * 100}%;" aria-valuenow="${(gameState.fishing.fishingProgress / gameState.fishing.fishingTime) * 100}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <button id="stop-fishing-btn" class="btn btn-danger mt-2">Stop Fishing</button>
+            `;
+        } else {
+            dom.actionContent.innerHTML = `
+                <p>Ready to fish.</p>
+                <button id="start-fishing-btn" class="btn btn-primary">Start Fishing</button>
+            `;
+        }
+    } else {
+        dom.actionContent.innerHTML = `
+            <p>Currently training ${skillName}.</p>
+            <p>XP/sec: ${skill.gatherRate * skill.baseXp}</p>
+        `;
+    }
 };
 
 const updateAscendButton = () => {
@@ -839,6 +836,15 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.ascendBtn.addEventListener('click', ascend);
     dom.openPrestigeBtn.addEventListener('click', () => dom.prestigeModal.show());
     dom.resetGameBtn.addEventListener('click', resetGame);
+
+    dom.actionContent.addEventListener('click', (e) => {
+        if (e.target.id === 'start-fishing-btn') {
+            startFishing();
+        }
+        if (e.target.id === 'stop-fishing-btn') {
+            stopFishing();
+        }
+    });
 
     displayVersion();
 
