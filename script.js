@@ -435,6 +435,10 @@ const updateAscendButton = () => {
 };
 
 const updateSkillTreeUI = () => {
+    if (!gameState.skillTree || !gameState.skillTree.nodes) {
+        dom.skillTreeContent.innerHTML = '';
+        return;
+    }
     dom.skillTreeContent.innerHTML = '';
     for (const nodeId in gameState.skillTree.nodes) {
         const node = gameState.skillTree.nodes[nodeId];
