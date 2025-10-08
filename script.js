@@ -199,16 +199,36 @@ const getNewGameState = () => {
             mining: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Copper Ore', gatherRate: 1, baseXp: 15, locked: false, maxStorage: 100 },
             fishing: { level: 1, xp: 0, xpToNextLevel: 100, resource: 'Fish', gatherRate: 1, baseXp: 12, locked: false, maxStorage: 100 }
         },
-        storage: { 
-            Logs: { current: 0, max: 100 }, 
-            'Copper Ore': { current: 0, max: 100 }, 
-            Fish: { current: 0, max: 100 } 
+        storage: {
+            Logs: { current: 0, max: 100 },
+            'Copper Ore': { current: 0, max: 100 },
+            'Tin Ore': { current: 0, max: 100 },
+            'Iron Ore': { current: 0, max: 100 },
+            Shrimp: { current: 0, max: 100 },
+            Sardine: { current: 0, max: 100 },
+            Herring: { current: 0, max: 100 },
+            Tuna: { current: 0, max: 100 },
+            Lobster: { current: 0, max: 100 },
+            Swordfish: { current: 0, max: 100 },
         },
         activeSkill: 'woodcutting',
         fishing: {
             isFishing: false,
             fishingProgress: 0,
-            fishingTime: 5 // 5 seconds to catch a fish
+            fishingTime: 5, // 5 seconds to catch a fish
+            currentArea: 'tutorial_island'
+        },
+        mining: {
+            isMining: false,
+            miningProgress: 0,
+            miningTime: 5, // 5 seconds to mine an ore
+            currentZone: 'lumbridge_swamp'
+        },
+        woodcutting: {
+            isChopping: false,
+            choppingProgress: 0,
+            choppingTime: 5, // 5 seconds to chop a tree
+            currentArea: 'lumbridge'
         },
         autosaveInterval: 15
     };
@@ -462,11 +482,85 @@ const ascend = () => {
     updateAllUI();
 };
 
+const startMining = () => {
+    if (gameState.activeSkill !== 'mining') {
+        setActiveSkill('mining');
+    }
+    gameState.mining.isMining = true;
+    addLog("You start mining.");
+    updateAllUI();
+};
+
+const stopMining = () => {
+    gameState.mining.isMining = false;
+    addLog("You stop mining.");
+    updateAllUI();
+};
+
+const mineOre = () => {
+    const zone = miningData.zones[gameState.mining.currentZone];
+    const rand = Math.random();
+    let cumulativeChance = 0;
+    for (const oreName in zone.ores) {
+        cumulativeChance += zone.ores[oreName].chance;
+        if (rand < cumulativeChance) {
+            const ore = miningData.ores[oreName];
+            addLog(`You mined some ${ore.name}!`);
+            gameState.storage[ore.name].current++;
+            gainXp('mining', ore.xp);
+            updateStorage();
+            return;
+        }
+    }
+};
+
+const startWoodcutting = () => {
+    if (gameState.activeSkill !== 'woodcutting') {
+        setActiveSkill('woodcutting');
+    }
+    gameState.woodcutting.isChopping = true;
+    addLog("You start chopping wood.");
+    updateAllUI();
+};
+
+const stopWoodcutting = () => {
+    gameState.woodcutting.isChopping = false;
+    addLog("You stop chopping wood.");
+    updateAllUI();
+};
+
+const chopTree = () => {
+    const area = woodcuttingData.areas[gameState.woodcutting.currentArea];
+    const rand = Math.random();
+    let cumulativeChance = 0;
+    for (const treeName in area.trees) {
+        cumulativeChance += area.trees[treeName].chance;
+        if (rand < cumulativeChance) {
+            const tree = woodcuttingData.trees[treeName];
+            addLog(`You got some ${tree.name}!`);
+            gameState.storage.Logs.current++; // Assuming all trees give logs for now
+            gainXp('woodcutting', tree.xp);
+            updateStorage();
+            return;
+        }
+    }
+};
+
 const fishCaught = () => {
-    addLog("You caught a fish!");
-    gameState.storage.Fish.current++;
-    gainXp('fishing', 1);
-    updateStorage();
+    const area = fishingData.areas[gameState.fishing.currentArea];
+    const rand = Math.random();
+    let cumulativeChance = 0;
+    for (const fishName in area.fish) {
+        cumulativeChance += area.fish[fishName].chance;
+        if (rand < cumulativeChance) {
+            const fish = fishingData.fish[fishName];
+            addLog(`You caught a ${fish.name}!`);
+            gameState.storage[fish.name].current++;
+            gainXp('fishing', fish.xp);
+            updateStorage();
+            return;
+        }
+    }
 };
 
 const purchaseSkillTreeNode = (nodeId) => {
@@ -521,6 +615,26 @@ const calculateFishingProgress = () => {
     }
 };
 
+const calculateMiningProgress = () => {
+    if (gameState.mining.isMining) {
+        gameState.mining.miningProgress++;
+        if (gameState.mining.miningProgress >= gameState.mining.miningTime) {
+            gameState.mining.miningProgress = 0;
+            mineOre();
+        }
+    }
+};
+
+const calculateWoodcuttingProgress = () => {
+    if (gameState.woodcutting.isChopping) {
+        gameState.woodcutting.choppingProgress++;
+        if (gameState.woodcutting.choppingProgress >= gameState.woodcutting.choppingTime) {
+            gameState.woodcutting.choppingProgress = 0;
+            chopTree();
+        }
+    }
+};
+
 const gameTick = () => {
     const skill = gameState.skills[gameState.activeSkill];
     if (skill && skill.gatherRate > 0 && gameState.activeSkill !== 'fishing') {
@@ -561,6 +675,8 @@ const gameTick = () => {
     }
 
     calculateFishingProgress();
+    calculateMiningProgress();
+    calculateWoodcuttingProgress();
 
     saveTicker++;
     if (saveTicker >= gameState.autosaveInterval) {
@@ -615,6 +731,18 @@ const updateStorage = () => {
     }
 };
 
+const createAreaSelector = (skillName, areas, currentArea) => {
+    let areaSelector = `<div class="mb-3"><label for="${skillName}-area-select" class="form-label">Select Area:</label><select id="${skillName}-area-select" class="form-select">`;
+    for (const areaId in areas) {
+        const area = areas[areaId];
+        if (gameState.skills[skillName].level >= area.level) {
+            areaSelector += `<option value="${areaId}" ${areaId === currentArea ? 'selected' : ''}>${area.name}</option>`;
+        }
+    }
+    areaSelector += '</select></div>';
+    return areaSelector;
+};
+
 const setActiveSkill = (skillName) => {
     if (!gameState.skills || Object.keys(gameState.skills).length === 0) {
         dom.actionPanelTitle.textContent = "Welcome";
@@ -633,9 +761,13 @@ const setActiveSkill = (skillName) => {
     updateSkillsList();
 
     dom.actionPanelTitle.textContent = skillName.charAt(0).toUpperCase() + skillName.slice(1);
+
+    let content = '';
+
     if (skillName === 'fishing') {
+        content += createAreaSelector('fishing', fishingData.areas, gameState.fishing.currentArea);
         if (gameState.fishing.isFishing) {
-            dom.actionContent.innerHTML = `
+            content += `
                 <p>Currently fishing...</p>
                 <div class="progress" style="height: 20px;">
                     <div class="progress-bar bg-info" role="progressbar" style="width: ${(gameState.fishing.fishingProgress / gameState.fishing.fishingTime) * 100}%;" aria-valuenow="${(gameState.fishing.fishingProgress / gameState.fishing.fishingTime) * 100}" aria-valuemin="0" aria-valuemax="100"></div>
@@ -643,17 +775,81 @@ const setActiveSkill = (skillName) => {
                 <button id="stop-fishing-btn" class="btn btn-danger mt-2">Stop Fishing</button>
             `;
         } else {
-            dom.actionContent.innerHTML = `
+            content += `
                 <p>Ready to fish.</p>
                 <button id="start-fishing-btn" class="btn btn-primary">Start Fishing</button>
             `;
         }
+        const area = fishingData.areas[gameState.fishing.currentArea];
+        content += '<ul class="list-group mt-3">';
+        for (const fishName in area.fish) {
+            const fish = fishingData.fish[fishName];
+            content += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                ${fish.name}
+                <span class="badge bg-primary rounded-pill">${area.fish[fishName].chance * 100}%</span>
+            </li>`;
+        }
+        content += '</ul>';
+    } else if (skillName === 'mining') {
+        content += createAreaSelector('mining', miningData.zones, gameState.mining.currentZone);
+        if (gameState.mining.isMining) {
+            content += `
+                <p>Currently mining...</p>
+                <div class="progress" style="height: 20px;">
+                    <div class="progress-bar bg-info" role="progressbar" style="width: ${(gameState.mining.miningProgress / gameState.mining.miningTime) * 100}%;" aria-valuenow="${(gameState.mining.miningProgress / gameState.mining.miningTime) * 100}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <button id="stop-mining-btn" class="btn btn-danger mt-2">Stop Mining</button>
+            `;
+        } else {
+            content += `
+                <p>Ready to mine.</p>
+                <button id="start-mining-btn" class="btn btn-primary">Start Mining</button>
+            `;
+        }
+        const zone = miningData.zones[gameState.mining.currentZone];
+        content += '<ul class="list-group mt-3">';
+        for (const oreName in zone.ores) {
+            const ore = miningData.ores[oreName];
+            content += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                ${ore.name}
+                <span class="badge bg-primary rounded-pill">${zone.ores[oreName].chance * 100}%</span>
+            </li>`;
+        }
+        content += '</ul>';
+    } else if (skillName === 'woodcutting') {
+        content += createAreaSelector('woodcutting', woodcuttingData.areas, gameState.woodcutting.currentArea);
+        if (gameState.woodcutting.isChopping) {
+            content += `
+                <p>Currently chopping...</p>
+                <div class="progress" style="height: 20px;">
+                    <div class="progress-bar bg-info" role="progressbar" style="width: ${(gameState.woodcutting.choppingProgress / gameState.woodcutting.choppingTime) * 100}%;" aria-valuenow="${(gameState.woodcutting.choppingProgress / gameState.woodcutting.choppingTime) * 100}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <button id="stop-woodcutting-btn" class="btn btn-danger mt-2">Stop Chopping</button>
+            `;
+        } else {
+            content += `
+                <p>Ready to chop.</p>
+                <button id="start-woodcutting-btn" class="btn btn-primary">Start Chopping</button>
+            `;
+        }
+        const area = woodcuttingData.areas[gameState.woodcutting.currentArea];
+        content += '<ul class="list-group mt-3">';
+        for (const treeName in area.trees) {
+            const tree = woodcuttingData.trees[treeName];
+            content += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                ${tree.name}
+                <span class="badge bg-primary rounded-pill">${area.trees[treeName].chance * 100}%</span>
+            </li>`;
+        }
+        content += '</ul>';
     } else {
-        dom.actionContent.innerHTML = `
+        content = `
             <p>Currently training ${skillName}.</p>
             <p>XP/sec: ${skill.gatherRate * skill.baseXp}</p>
         `;
     }
+
+    dom.actionContent.innerHTML = content;
 };
 
 const updateAscendButton = () => {
@@ -891,6 +1087,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (e.target.id === 'stop-fishing-btn') {
             stopFishing();
+        }
+        if (e.target.id === 'start-mining-btn') {
+            startMining();
+        }
+        if (e.target.id === 'stop-mining-btn') {
+            stopMining();
+        }
+        if (e.target.id === 'start-woodcutting-btn') {
+            startWoodcutting();
+        }
+        if (e.target.id === 'stop-woodcutting-btn') {
+            stopWoodcutting();
+        }
+    });
+
+    dom.actionContent.addEventListener('change', (e) => {
+        if (e.target.id === 'fishing-area-select') {
+            gameState.fishing.currentArea = e.target.value;
+            setActiveSkill('fishing');
+        }
+        if (e.target.id === 'mining-zone-select') {
+            gameState.mining.currentZone = e.target.value;
+            setActiveSkill('mining');
+        }
+        if (e.target.id === 'woodcutting-area-select') {
+            gameState.woodcutting.currentArea = e.target.value;
+            setActiveSkill('woodcutting');
         }
     });
 
