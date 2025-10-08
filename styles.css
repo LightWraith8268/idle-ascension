@@ -34,7 +34,7 @@ body {
     font-size: 1em;
 }
 
-.skill-entry, .stat-entry, .inventory-entry {
+.skill-entry, .stat-entry, .storage-entry {
     display: flex;
     justify-content: space-between;
     margin-bottom: 8px;

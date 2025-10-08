@@ -144,7 +144,7 @@ const getNewGameState = () => {
     currentParent = layer2Root;
     createOfflineTimeNode(7, currentParent, 2);
     createAutosaveNode(7, currentParent, 2);
-    createNode(10, 'Increase inventory size by 20.', currentParent, 'inventory_size', { amount: 20 });
+    createNode(10, 'storage', currentParent, 'inventory_size', { amount: 20 });
 
     // Branch 3: Skill Specialization
     currentParent = layer2Root;
@@ -570,7 +570,7 @@ const updateStorage = () => {
             if (roundedAmount < 0) roundedAmount = 0;
 
             const entry = document.createElement('div');
-            entry.className = 'inventory-entry';
+            entry.className = 'storage-entry';
             entry.innerHTML = `<span>${item}:</span><span>${roundedAmount} / ${gameState.inventory[item].max}</span>`;
             dom.storageContent.appendChild(entry);
         }
