@@ -3,7 +3,7 @@
 ## Core Mechanics
 
 - [x] Ascension mechanic
-- [x] Prestige system (RuneScape-themed) - *Implemented as a Skill Tree*
+- [x] Prestige system (RuneScape-themed) - *Implemented as a Skill Tree with a dedicated modal*
 - [x] Offline progress
 - [x] Multiple save slots per user
 - [x] Ability to switch between save slots

@@ -34,8 +34,8 @@ const dom = {
     slotList: document.getElementById('slot-list'),
     slotSwitcherBtn: document.getElementById('slot-switcher-btn'),
     openPrestigeBtn: document.getElementById('open-prestige-btn'),
-    loginModal: new bootstrap.Modal(document.getElementById('loginModal')),
-    prestigeModal: new bootstrap.Modal(document.getElementById('prestigeModal'))
+    loginModal: null, // Initialize as null
+    prestigeModal: null // Initialize as null
 };
 
 // -----------------
@@ -545,6 +545,10 @@ const resetGame = () => {
 
 document.addEventListener('DOMContentLoaded', () => {
     addLog('DOM loaded. Initializing.');
+
+    // Initialize Bootstrap Modals here
+    dom.loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+    dom.prestigeModal = new bootstrap.Modal(document.getElementById('prestigeModal'));
 
     dom.signinBtn.addEventListener('click', signInWithEmail);
     dom.signupBtn.addEventListener('click', signUpWithEmail);
